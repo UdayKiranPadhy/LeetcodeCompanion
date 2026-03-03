@@ -4,6 +4,7 @@ import { Spinner } from '@/components/ui/Spinner';
 interface SearchInputProps {
   onSubmit: (value: string) => void;
   isLoading?: boolean;
+  onFocusChange?: (focused: boolean) => void;
 }
 
 const PLACEHOLDERS = [
@@ -12,13 +13,22 @@ const PLACEHOLDERS = [
   'Paste the full problem description…',
 ];
 
-export function SearchInput({ onSubmit, isLoading = false }: SearchInputProps) {
+export function SearchInput({ onSubmit, isLoading = false, onFocusChange }: SearchInputProps) {
   const [value, setValue] = useState('');
   const [placeholderIndex, setPlaceholderIndex] = useState(0);
   const [placeholderVisible, setPlaceholderVisible] = useState(true);
   const [isFocused, setIsFocused] = useState(false);
   const [shaking, setShaking] = useState(false);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  // Auto-resize textarea
+  useEffect(() => {
+    if (textareaRef.current) {
+      textareaRef.current.style.height = 'auto';
+      textareaRef.current.style.height = `${textareaRef.current.scrollHeight}px`;
+    }
+  }, [value]);
 
   // Cycle placeholder
   useEffect(() => {
@@ -30,12 +40,16 @@ export function SearchInput({ onSubmit, isLoading = false }: SearchInputProps) {
         setPlaceholderIndex(i => (i + 1) % PLACEHOLDERS.length);
         setPlaceholderVisible(true);
       }, 300);
-    }, 2800);
+    }, 2100);
 
     return () => {
       if (intervalRef.current) clearInterval(intervalRef.current);
     };
   }, [isFocused, value]);
+
+  useEffect(() => {
+    onFocusChange?.(isFocused);
+  }, [isFocused, onFocusChange]);
 
   function handleSubmit() {
     if (!value.trim()) {
@@ -47,21 +61,45 @@ export function SearchInput({ onSubmit, isLoading = false }: SearchInputProps) {
   }
 
   function handleKeyDown(e: React.KeyboardEvent) {
-    if (e.key === 'Enter') handleSubmit();
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSubmit();
+    }
   }
 
   return (
     <div style={{ position: 'relative', width: '100%', maxWidth: '620px' }}>
+      {/* Label above search bar when focused */}
+      <div
+        style={{
+          position: 'absolute',
+          top: '-40px',
+          left: '0',
+          width: '100%',
+          textAlign: 'center',
+          color: 'var(--color-text-primary)',
+          fontSize: 'var(--text-xl)',
+          fontWeight: 'var(--weight-medium)',
+          opacity: isFocused ? 1 : 0,
+          transform: isFocused ? 'translateY(0)' : 'translateY(10px)',
+          transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+          pointerEvents: 'none',
+        }}
+      >
+        Enter a LeetCode URL, problem title, or description
+      </div>
+
       <div
         style={{
           display: 'flex',
           alignItems: 'center',
           background: 'var(--color-bg-primary)',
-          border: `1.5px solid ${isFocused ? 'var(--color-border-focus)' : 'var(--color-border)'}`,
-          borderRadius: 'var(--radius-full)',
-          height: '56px',
-          padding: '0 6px 0 20px',
-          boxShadow: isFocused ? 'var(--shadow-focus)' : 'var(--shadow-sm)',
+          border: `1px solid ${isFocused ? 'var(--color-border-focus)' : 'var(--color-border)'}`,
+          borderRadius: '28px', // Matched height/2
+          minHeight: '56px',
+          height: 'auto',
+          padding: '8px 6px 8px 20px',
+          boxShadow: isFocused ? 'var(--shadow-focus)' : 'var(--shadow-md)',
           transition:
             'border-color var(--duration-fast) var(--ease-standard), ' +
             'box-shadow var(--duration-fast) var(--ease-standard)',
@@ -69,29 +107,16 @@ export function SearchInput({ onSubmit, isLoading = false }: SearchInputProps) {
           gap: 'var(--space-3)',
         }}
       >
-        {/* Search icon */}
-        <svg
-          width="18"
-          height="18"
-          viewBox="0 0 18 18"
-          fill="none"
-          style={{ flexShrink: 0, color: 'var(--color-text-tertiary)' }}
-        >
-          <circle cx="7.5" cy="7.5" r="5.5" stroke="currentColor" strokeWidth="1.5" />
-          <path d="M13 13l3 3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-        </svg>
-
         {/* Input + animated placeholder */}
-        <div style={{ flex: 1, position: 'relative', height: '100%', display: 'flex', alignItems: 'center' }}>
+        <div style={{ flex: 1, position: 'relative', minHeight: '24px', display: 'flex', alignItems: 'center' }}>
           {/* Animated placeholder */}
           {!value && !isFocused && (
             <span
               key={placeholderIndex}
               style={{
                 position: 'absolute',
-                left: 0,
                 color: 'var(--color-text-tertiary)',
-                fontSize: 'var(--text-md)',
+                fontSize: 'var(--text-lg)',
                 pointerEvents: 'none',
                 userSelect: 'none',
                 animation: placeholderVisible
@@ -101,19 +126,21 @@ export function SearchInput({ onSubmit, isLoading = false }: SearchInputProps) {
                 overflow: 'hidden',
                 textOverflow: 'ellipsis',
                 maxWidth: '100%',
+                lineHeight: '24px', // Match textarea line-height
               }}
             >
               {PLACEHOLDERS[placeholderIndex]}
             </span>
           )}
 
-          <input
-            type="text"
+          <textarea
+            ref={textareaRef}
             value={value}
             onChange={e => setValue(e.target.value)}
             onKeyDown={handleKeyDown}
             onFocus={() => setIsFocused(true)}
             onBlur={() => setIsFocused(false)}
+            rows={1}
             style={{
               width: '100%',
               background: 'transparent',
@@ -121,8 +148,13 @@ export function SearchInput({ onSubmit, isLoading = false }: SearchInputProps) {
               outline: 'none',
               fontFamily: 'var(--font-body)',
               fontSize: 'var(--text-md)',
+              lineHeight: '24px',
               color: 'var(--color-text-primary)',
               caretColor: 'var(--color-accent)',
+              resize: 'none',
+              overflow: 'hidden',
+              padding: 0,
+              margin: 0,
             }}
             aria-label="Enter a LeetCode URL, problem title, or paste the problem description"
           />
@@ -167,10 +199,7 @@ export function SearchInput({ onSubmit, isLoading = false }: SearchInputProps) {
             </>
           ) : (
             <>
-              Analyze
-              <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                <path d="M2 7h10M8 3l4 4-4 4" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
+              Explore
             </>
           )}
         </button>
@@ -180,7 +209,7 @@ export function SearchInput({ onSubmit, isLoading = false }: SearchInputProps) {
       <p
         style={{
           marginTop: 'var(--space-3)',
-          fontSize: 'var(--text-sm)',
+          fontSize: 'var(--text-base)',
           color: 'var(--color-text-tertiary)',
           textAlign: 'center',
           lineHeight: 'var(--leading-normal)',

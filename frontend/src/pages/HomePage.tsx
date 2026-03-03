@@ -12,10 +12,8 @@ export function HomePage() {
     setIsLoading(true);
     setError(null);
     try {
-      setError('Could not load the problem. Please try again.');
-      // setIsLoading(false);
-      // const problem = await fetchProblemDetails(input);
-      // navigate(`/problem/${problem.slug}`, { state: { problem } });
+      const problem = await fetchProblemDetails(input);
+      navigate(`/problem/${problem.slug}`, { state: { problem } });
     } catch {
       setError('Could not load the problem. Please try again.');
       setIsLoading(false);
