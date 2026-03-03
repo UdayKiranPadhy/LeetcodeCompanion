@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(export NVM_DIR=\"$HOME/.nvm\")",
+      "Bash(source \"$NVM_DIR/nvm.sh\")",
+      "Bash(nvm use 20)",
+      "Bash(npm install)",
+      "Bash(source /Users/ukpadhy/.nvm/nvm.sh)",
+      "Bash(npm run build)",
+      "Bash(timeout 8 npm run dev)"
+    ]
+  }
+}
