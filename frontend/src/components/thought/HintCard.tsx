@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import type { Hint } from '@/types';
+import { SpotlightCard } from '@/components/ui/SpotlightCard';
 
 interface HintCardProps {
   hints: Hint[];
@@ -18,7 +19,7 @@ export function HintCard({ hints }: HintCardProps) {
   const allRevealed = revealedCount >= hints.length;
 
   return (
-    <div
+    <SpotlightCard
       style={{
         background: 'var(--color-bg-secondary)',
         border: '1px solid var(--color-border)',
@@ -171,6 +172,6 @@ export function HintCard({ hints }: HintCardProps) {
           {hints.length} hint{hints.length !== 1 ? 's' : ''} available — reveal them one at a time.
         </p>
       )}
-    </div>
+    </SpotlightCard>
   );
 }

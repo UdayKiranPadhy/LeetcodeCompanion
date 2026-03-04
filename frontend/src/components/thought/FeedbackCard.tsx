@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import type { FeedbackItem, ChatContext } from '@/types';
 import { ChatPanel } from '@/components/chat/ChatPanel';
+import { SpotlightCard } from '@/components/ui/SpotlightCard';
 
 interface FeedbackCardProps {
   type: 'correct' | 'incorrect';
@@ -20,7 +21,7 @@ export function FeedbackCard({ type, items, problemId }: FeedbackCardProps) {
   if (items.length === 0) return null;
 
   return (
-    <div
+    <SpotlightCard
       style={{
         borderLeft: `4px solid ${isCorrect ? 'var(--color-success-border)' : 'var(--color-error-border)'}`,
         background: isCorrect ? 'var(--color-success-bg)' : 'var(--color-error-bg)',
@@ -144,6 +145,6 @@ export function FeedbackCard({ type, items, problemId }: FeedbackCardProps) {
         isOpen={chatOpen}
         onClose={() => setChatOpen(false)}
       />
-    </div>
+    </SpotlightCard>
   );
 }

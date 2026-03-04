@@ -39,7 +39,7 @@ export function Badge({ label, color = 'neutral' }: BadgeProps) {
         alignItems: 'center',
         padding: '2px 10px',
         borderRadius: 'var(--radius-full)',
-        fontSize: 'var(--text-xs)',
+        fontSize: 'var(--text-sm)',
         fontWeight: 'var(--weight-semibold)',
         fontFamily: 'var(--font-body)',
         letterSpacing: '0.02em',

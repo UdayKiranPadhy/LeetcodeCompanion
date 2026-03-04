@@ -4,6 +4,7 @@ import hljs from 'highlight.js/lib/core';
 import python from 'highlight.js/lib/languages/python';
 import java from 'highlight.js/lib/languages/java';
 import javascript from 'highlight.js/lib/languages/javascript';
+import { SpotlightCard } from '@/components/ui/SpotlightCard';
 
 hljs.registerLanguage('python', python);
 hljs.registerLanguage('java', java);
@@ -46,7 +47,7 @@ export function CodeBlock({ code, language, steps, activeStep }: CodeBlockProps)
     : undefined;
 
   return (
-    <div
+    <SpotlightCard
       style={{
         borderRadius: 'var(--radius-lg)',
         overflow: 'hidden',
@@ -54,6 +55,7 @@ export function CodeBlock({ code, language, steps, activeStep }: CodeBlockProps)
         boxShadow: 'var(--shadow-md)',
         position: 'relative',
       }}
+      spotlightColor="rgba(255, 255, 255, 0.08)"
     >
       {/* Top bar */}
       <div
@@ -236,6 +238,6 @@ export function CodeBlock({ code, language, steps, activeStep }: CodeBlockProps)
           </code>
         </pre>
       </div>
-    </div>
+    </SpotlightCard>
   );
 }

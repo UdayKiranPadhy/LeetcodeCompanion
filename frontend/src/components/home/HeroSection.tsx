@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
+import { HeroBackground } from './HeroBackground';
 import { SearchInput } from './SearchInput';
+import { SpotlightCard } from '@/components/ui/SpotlightCard';
 
 interface HeroSectionProps {
   onSubmit: (input: string) => void;
@@ -35,57 +37,7 @@ export function HeroSection({ onSubmit, isLoading }: HeroSectionProps) {
         aria-hidden="true"
       />
 
-      {/* Animated background orbs */}
-      <div
-        aria-hidden="true"
-        style={{
-          position: 'absolute',
-          inset: 0,
-          pointerEvents: 'none',
-          overflow: 'hidden',
-          zIndex: 0,
-        }}
-      >
-        <div
-          style={{
-            position: 'absolute',
-            top: '-80px',
-            left: '-120px',
-            width: '500px',
-            height: '500px',
-            borderRadius: '50%',
-            background: 'radial-gradient(circle, rgba(26,115,232,0.09) 0%, transparent 70%)',
-            filter: 'blur(32px)',
-            animation: 'orb-drift-a 14s ease-in-out infinite alternate',
-          }}
-        />
-        <div
-          style={{
-            position: 'absolute',
-            bottom: '-60px',
-            right: '-100px',
-            width: '420px',
-            height: '420px',
-            borderRadius: '50%',
-            background: 'radial-gradient(circle, rgba(66,133,244,0.07) 0%, transparent 70%)',
-            filter: 'blur(32px)',
-            animation: 'orb-drift-b 18s ease-in-out infinite alternate',
-          }}
-        />
-        <div
-          style={{
-            position: 'absolute',
-            top: '40%',
-            right: '10%',
-            width: '280px',
-            height: '280px',
-            borderRadius: '50%',
-            background: 'radial-gradient(circle, rgba(138,180,248,0.06) 0%, transparent 70%)',
-            filter: 'blur(24px)',
-            animation: 'orb-drift-a 22s ease-in-out infinite alternate-reverse',
-          }}
-        />
-      </div>
+      <HeroBackground />
 
       {/* Hero content */}
       <div
@@ -207,14 +159,47 @@ export function HeroSection({ onSubmit, isLoading }: HeroSectionProps) {
           style={{
             flex: '1 1 450px',
             display: 'flex',
+            flexDirection: 'column',
             justifyContent: 'center',
             alignItems: 'center',
+            gap: 'var(--space-6)',
             position: 'relative',
             zIndex: searchFocused ? 50 : 1,
             animation: 'slide-up 600ms var(--ease-decelerate) forwards',
           }}
         >
           <SearchInput onSubmit={onSubmit} isLoading={isLoading} onFocusChange={setSearchFocused} />
+
+          {/* Quick Access Cards showing Spotlight Effect */}
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr)',
+            gap: 'var(--space-4)',
+            width: '100%',
+            maxWidth: '620px',
+            opacity: searchFocused ? 0 : 1,
+            transform: searchFocused ? 'translateY(20px)' : 'translateY(0)',
+            transition: 'all 400ms cubic-bezier(0.4, 0, 0.2, 1)',
+            pointerEvents: searchFocused ? 'none' : 'auto',
+          }}>
+            <SpotlightCard
+              style={{ padding: 'var(--space-4)', cursor: 'pointer' }}
+              onClick={() => onSubmit('two-sum')}
+              spotlightColor="rgba(26, 115, 232, 0.12)"
+            >
+              <div style={{ fontWeight: '600', marginBottom: '4px' }}>Two Sum</div>
+              <div style={{ fontSize: 'var(--text-sm)', color: 'var(--color-difficulty-easy)' }}>Easy • Array</div>
+            </SpotlightCard>
+
+            <SpotlightCard
+              style={{ padding: 'var(--space-4)', cursor: 'pointer' }}
+              onClick={() => onSubmit('lru-cache')}
+              spotlightColor="rgba(26, 115, 232, 0.12)"
+            >
+              <div style={{ fontWeight: '600', marginBottom: '4px' }}>LRU Cache</div>
+              <div style={{ fontSize: 'var(--text-sm)', color: 'var(--color-difficulty-medium)' }}>Medium • Design</div>
+            </SpotlightCard>
+          </div>
         </div>
       </div>
     </section>

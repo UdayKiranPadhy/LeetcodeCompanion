@@ -2,6 +2,7 @@ import React, { useRef, useState, useEffect } from 'react';
 import type { Problem } from '@/types';
 import { DifficultyBadge } from './DifficultyBadge';
 import { Badge } from '@/components/ui/Badge';
+import { SpotlightCard } from '@/components/ui/SpotlightCard';
 
 interface ProblemCardProps {
   problem: Problem;
@@ -38,7 +39,7 @@ export function ProblemCard({ problem, defaultCollapsed = false }: ProblemCardPr
   }
 
   return (
-    <div
+    <SpotlightCard
       style={{
         background: 'var(--color-bg-primary)',
         border: '1px solid var(--color-border)',
@@ -70,7 +71,7 @@ export function ProblemCard({ problem, defaultCollapsed = false }: ProblemCardPr
             <span
               style={{
                 fontFamily: 'var(--font-body)',
-                fontSize: 'var(--text-lg)',
+                fontSize: 'var(--text-2xl)',
                 fontWeight: 'var(--weight-semibold)',
                 color: 'var(--color-text-primary)',
               }}
@@ -134,7 +135,7 @@ export function ProblemCard({ problem, defaultCollapsed = false }: ProblemCardPr
           <div
             style={{
               fontFamily: 'var(--font-body)',
-              fontSize: 'var(--text-base)',
+              fontSize: 'var(--text-md)',
               color: 'var(--color-text-primary)',
               lineHeight: 'var(--leading-relaxed)',
               marginBottom: 'var(--space-6)',
@@ -147,7 +148,7 @@ export function ProblemCard({ problem, defaultCollapsed = false }: ProblemCardPr
             <div style={{ marginBottom: 'var(--space-5)' }}>
               <p
                 style={{
-                  fontSize: 'var(--text-sm)',
+                  fontSize: 'var(--text-md)',
                   fontWeight: 'var(--weight-semibold)',
                   color: 'var(--color-text-secondary)',
                   textTransform: 'uppercase',
@@ -231,6 +232,6 @@ export function ProblemCard({ problem, defaultCollapsed = false }: ProblemCardPr
           )}
         </div>
       </div>
-    </div>
+    </SpotlightCard>
   );
 }

@@ -1,7 +1,9 @@
 @import './tokens.css';
 
 /* ── Reset ───────────────────────────────────────────────────────────────── */
-*, *::before, *::after {
+*,
+*::before,
+*::after {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
@@ -30,13 +32,16 @@ body {
   width: 6px;
   height: 6px;
 }
+
 ::-webkit-scrollbar-track {
   background: transparent;
 }
+
 ::-webkit-scrollbar-thumb {
   background: var(--color-border);
   border-radius: var(--radius-full);
 }
+
 ::-webkit-scrollbar-thumb:hover {
   background: var(--color-text-tertiary);
 }
@@ -45,13 +50,15 @@ body {
 :focus {
   outline: none;
 }
+
 :focus-visible {
   outline: 2px solid var(--color-accent);
   outline-offset: 2px;
 }
 
 /* ── Typography ──────────────────────────────────────────────────────────── */
-pre, code {
+pre,
+code {
   font-family: var(--font-code);
 }
 
@@ -59,23 +66,36 @@ a {
   color: var(--color-accent);
   text-decoration: none;
 }
+
 a:hover {
   text-decoration: underline;
 }
 
 /* ── Animations ──────────────────────────────────────────────────────────── */
 @keyframes shimmer {
-  from { background-position: -600px 0; }
-  to   { background-position: 600px 0; }
+  from {
+    background-position: -600px 0;
+  }
+
+  to {
+    background-position: 600px 0;
+  }
 }
 
 @keyframes spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 @keyframes fade-in {
-  from { opacity: 0; }
-  to   { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
 }
 
 @keyframes slide-up {
@@ -83,6 +103,7 @@ a:hover {
     opacity: 0;
     transform: translateY(12px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -90,21 +111,47 @@ a:hover {
 }
 
 @keyframes shake {
-  0%, 100% { transform: translateX(0); }
-  20%       { transform: translateX(-6px); }
-  40%       { transform: translateX(6px); }
-  60%       { transform: translateX(-4px); }
-  80%       { transform: translateX(4px); }
+
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+
+  20% {
+    transform: translateX(-6px);
+  }
+
+  40% {
+    transform: translateX(6px);
+  }
+
+  60% {
+    transform: translateX(-4px);
+  }
+
+  80% {
+    transform: translateX(4px);
+  }
 }
 
 @keyframes orb-drift-a {
-  from { transform: translate(0, 0) scale(1); }
-  to   { transform: translate(24px, 16px) scale(1.08); }
+  from {
+    transform: translate(0, 0) scale(1);
+  }
+
+  to {
+    transform: translate(24px, 16px) scale(1.08);
+  }
 }
 
 @keyframes orb-drift-b {
-  from { transform: translate(0, 0) scale(1.04); }
-  to   { transform: translate(-20px, 12px) scale(1); }
+  from {
+    transform: translate(0, 0) scale(1.04);
+  }
+
+  to {
+    transform: translate(-20px, 12px) scale(1);
+  }
 }
 
 @keyframes placeholder-in {
@@ -112,6 +159,7 @@ a:hover {
     opacity: 0;
     transform: translateY(4px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -119,20 +167,25 @@ a:hover {
 }
 
 @keyframes placeholder-out {
-  from { opacity: 1; transform: translateY(0); }
-  to   { opacity: 0; transform: translateY(-4px); }
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  to {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
 }
 
 /* ── Utility ─────────────────────────────────────────────────────────────── */
 .skeleton-line {
   height: 14px;
   border-radius: var(--radius-sm);
-  background: linear-gradient(
-    90deg,
-    #F1F3F4 25%,
-    #E8EAED 50%,
-    #F1F3F4 75%
-  );
+  background: linear-gradient(90deg,
+      #F1F3F4 25%,
+      #E8EAED 50%,
+      #F1F3F4 75%);
   background-size: 1200px 100%;
   animation: shimmer 1.6s linear infinite;
 }
@@ -146,10 +199,47 @@ a:hover {
   opacity: 1;
   transform: translateY(0);
   transition: opacity var(--duration-reveal) var(--ease-decelerate),
-              transform var(--duration-reveal) var(--ease-decelerate);
+    transform var(--duration-reveal) var(--ease-decelerate);
 }
 
 /* Page transition */
 .page-enter {
   animation: fade-in var(--duration-medium) var(--ease-decelerate) forwards;
+}
+
+/* ── Hero Background Effect ──────────────────────────────────────────────── */
+.hero-bg {
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(circle, var(--color-border) 1.5px, transparent 1.5px);
+  background-position: calc(50% + var(--bg-x, 0px)) calc(50% + var(--bg-y, 0px));
+  background-size: 32px 32px;
+  transition: background-position 0.15s cubic-bezier(0.25, 1, 0.5, 1);
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0.6;
+}
+
+.hero-bg::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  /* Mouse spotlight gradient */
+  background: radial-gradient(800px circle at var(--mouse-x, 50%) var(--mouse-y, 50%),
+      rgba(26, 115, 232, 0.15),
+      transparent 50%);
+  z-index: 1;
+  pointer-events: none;
+}
+
+.hero-bg::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  /* Secondary glow */
+  background: radial-gradient(600px circle at var(--mouse-x, 50%) var(--mouse-y, 50%),
+      rgba(26, 115, 232, 0.05),
+      transparent 40%);
+  z-index: 2;
+  pointer-events: none;
 }

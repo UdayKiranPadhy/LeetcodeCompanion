@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import type { LoadingState, MathProof, ChatContext, Language } from '@/types';
 import { ChatPanel } from '@/components/chat/ChatPanel';
+import { SpotlightCard } from '@/components/ui/SpotlightCard';
 
 interface MathProofSectionProps {
   mathProof: MathProof | undefined;
@@ -27,7 +28,7 @@ export function MathProofSection({ mathProof, loadState, problemId, language }: 
   };
 
   return (
-    <div
+    <SpotlightCard
       className={loadState === 'success' ? 'section-revealed' : 'section-hidden'}
       style={{
         background: 'var(--color-bg-primary)',
@@ -228,6 +229,6 @@ export function MathProofSection({ mathProof, loadState, problemId, language }: 
           </>
         ) : null}
       </div>
-    </div>
+    </SpotlightCard>
   );
 }

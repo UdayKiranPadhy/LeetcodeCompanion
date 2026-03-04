@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import type { LoadingState, ChatContext, Language } from '@/types';
 import { ChatPanel } from '@/components/chat/ChatPanel';
+import { SpotlightCard } from '@/components/ui/SpotlightCard';
 
 interface ThoughtSectionProps {
   content: string;
@@ -28,7 +29,7 @@ export function ThoughtSection({ content, loadState, problemId, language }: Thou
   };
 
   return (
-    <div
+    <SpotlightCard
       className={loadState === 'success' ? 'section-revealed' : 'section-hidden'}
       style={{
         background: 'var(--color-bg-primary)',
@@ -139,6 +140,6 @@ export function ThoughtSection({ content, loadState, problemId, language }: Thou
           </>
         )}
       </div>
-    </div>
+    </SpotlightCard>
   );
 }
