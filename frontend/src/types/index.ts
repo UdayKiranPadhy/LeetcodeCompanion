@@ -70,6 +70,11 @@ export interface ChatContext {
   problemId: string;
   section: 'thought-analysis' | 'thoughtProcess' | 'mathProof' | 'code';
   language?: Language;
+  problem: Problem;
+  // thought-analysis only
+  userThought?: string;
+  feedbackType?: 'correct' | 'incorrect';
+  feedbackItems?: FeedbackItem[];
 }
 
 export interface SectionLoadState {

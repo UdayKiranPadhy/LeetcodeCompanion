@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
-import type { LoadingState, ChatContext, Language } from '@/types';
+import type { LoadingState, ChatContext, Language, Problem } from '@/types';
 import { ChatPanel } from '@/components/chat/ChatPanel';
 import { SpotlightCard } from '@/components/ui/SpotlightCard';
 
 interface ThoughtSectionProps {
   content: string;
   loadState: LoadingState;
-  problemId: string;
+  problem: Problem;
   language: Language;
 }
 
@@ -19,13 +19,14 @@ function renderMarkdown(text: string): string {
     .replace(/\n/g, '<br/>');
 }
 
-export function ThoughtSection({ content, loadState, problemId, language }: ThoughtSectionProps) {
+export function ThoughtSection({ content, loadState, problem, language }: ThoughtSectionProps) {
   const [chatOpen, setChatOpen] = useState(false);
 
   const context: ChatContext = {
-    problemId,
+    problemId: problem.id,
     section: 'thoughtProcess',
     language,
+    problem,
   };
 
   return (

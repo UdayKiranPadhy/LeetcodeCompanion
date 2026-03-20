@@ -7,9 +7,14 @@ function nextId() {
   return `msg-${++messageIdCounter}-${Date.now()}`;
 }
 
-// localStorage key is per-problem per-section so each chat panel has its own history
+// localStorage key is unique per conversation panel:
+// - thought-analysis is split by feedbackType (correct vs incorrect)
+// - other sections are split by section + language
 function storageKey(ctx: ChatContext) {
-  return `lc_chat_${ctx.problemId}_${ctx.section}`;
+  const parts = ['lc_chat', ctx.problemId, ctx.section];
+  if (ctx.feedbackType) parts.push(ctx.feedbackType);
+  if (ctx.language) parts.push(ctx.language);
+  return parts.join('_');
 }
 
 // Shape stored in localStorage: minimal, only what the AI needs
@@ -57,6 +62,7 @@ export function useChat(context: ChatContext): UseChatReturn {
   const [isStreaming, setIsStreaming] = useState(false);
 
   const sendMessage = useCallback(async (text: string) => {
+    console.log('[useChat] sendMessage called', { text, isStreaming, context });
     if (!text.trim() || isStreaming) return;
 
     const userMessage: ChatMessage = {

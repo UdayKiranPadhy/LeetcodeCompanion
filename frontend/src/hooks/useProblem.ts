@@ -22,6 +22,7 @@ interface UseProblemReturn {
 
   // Analysis flow
   feedback: ThoughtFeedback | null;
+  userThought: string;
   analyzeState: LoadingState;
   submitThought: (thought: string) => Promise<void>;
 
@@ -45,6 +46,7 @@ export function useProblem(): UseProblemReturn {
 
   // Analysis
   const [feedback, setFeedback] = useState<ThoughtFeedback | null>(null);
+  const [userThought, setUserThought] = useState<string>('');
   const [analyzeState, setAnalyzeState] = useState<LoadingState>('idle');
 
   // Solution
@@ -59,6 +61,7 @@ export function useProblem(): UseProblemReturn {
     try {
       const result = await analyzeThoughtProcess(problem, thought);
       setFeedback(result);
+      setUserThought(thought);
       setAnalyzeState('success');
     } catch {
       setAnalyzeState('error');
@@ -112,6 +115,7 @@ export function useProblem(): UseProblemReturn {
     problem,
     setProblem,
     feedback,
+    userThought,
     analyzeState,
     submitThought,
     solution,

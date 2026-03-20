@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
-import type { LoadingState, MathProof, ChatContext, Language } from '@/types';
+import type { LoadingState, MathProof, ChatContext, Language, Problem } from '@/types';
 import { ChatPanel } from '@/components/chat/ChatPanel';
 import { SpotlightCard } from '@/components/ui/SpotlightCard';
 
 interface MathProofSectionProps {
   mathProof: MathProof | undefined;
   loadState: LoadingState;
-  problemId: string;
+  problem: Problem;
   language: Language;
 }
 
@@ -18,13 +18,14 @@ function renderMarkdown(text: string): string {
     .replace(/\n/g, '<br/>');
 }
 
-export function MathProofSection({ mathProof, loadState, problemId, language }: MathProofSectionProps) {
+export function MathProofSection({ mathProof, loadState, problem, language }: MathProofSectionProps) {
   const [chatOpen, setChatOpen] = useState(false);
 
   const context: ChatContext = {
-    problemId,
+    problemId: problem.id,
     section: 'mathProof',
     language,
+    problem,
   };
 
   return (

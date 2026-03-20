@@ -436,23 +436,69 @@ Rules for steps:
 @router.post("/send-followup")
 async def send_followup(req: SendFollowUpRequest):
     """Stream a contextual follow-up answer using conversation history."""
-    section_labels = {
-        "thought-analysis": "the analysis of the student's thought process",
-        "thoughtProcess": "the intuition and approach explanation",
-        "mathProof": "the time/space complexity analysis and correctness proof",
-        "code": "the solution code and its step-by-step breakdown",
-    }
-    section_label = section_labels.get(req.context.section, req.context.section)
-    lang_note = f" The solution language is {req.context.language}." if req.context.language else ""
+    ctx = req.context
+    problem = ctx.problem
 
+    # ── Build problem block ───────────────────────────────────────────────────
+    if problem:
+        problem_block = (
+            f"PROBLEM: {problem.title} ({problem.difficulty})\n"
+            f"TAGS: {', '.join(problem.tags)}\n\n"
+            f"DESCRIPTION:\n{problem.description}\n"
+            f"EXAMPLES:\n"
+            + "\n".join(
+                f"- Input: {ex.input}\n  Output: {ex.output}\n  Explanation: {ex.explanation}\n  Image: {ex.image}\n"
+                for ex in problem.examples
+            )
+            + f"CONSTRAINTS:\n" + "\n".join(f"- {c}" for c in problem.constraints)
+        )
+    else:
+        problem_block = f"PROBLEM ID: {ctx.problemId}\n"
+
+    # ── Build section-specific context block ──────────────────────────────────
+    section_labels = {
+        "thought-analysis": "thought-process feedback",
+        "thoughtProcess": "intuition & approach explanation",
+        "mathProof": "time/space complexity analysis and correctness proof",
+        "code": "solution code and step-by-step breakdown",
+    }
+    section_label = section_labels.get(ctx.section, ctx.section)
+    lang_note = f" (language: {ctx.language})" if ctx.language else ""
+
+    if ctx.section == "thought-analysis" and ctx.feedbackType and ctx.feedbackItems:
+        card_label = "things the student got RIGHT" if ctx.feedbackType == "correct" else "things the student needs to RECONSIDER"
+        items_text = "\n".join(
+            f"- {item.text}: {item.detail}" if item.detail else f"- {item.text}"
+            for item in ctx.feedbackItems
+        )
+        thought_block = (
+            f"\nSTUDENT'S ORIGINAL THOUGHT PROCESS:\n{ctx.userThought}\n"
+            if ctx.userThought else ""
+        )
+        section_block = (
+            f"SECTION: {section_label}\n"
+            f"{thought_block}"
+            f"The student is asking a follow-up about the '{ctx.feedbackType}' feedback card "
+            f"({card_label}).\n\n"
+            f"FEEDBACK ITEMS IN THIS CARD:\n{items_text}\n"
+            f"Use the student's thought process and these feedback items as context to answer their follow-up. "
+            f"Do NOT repeat the items verbatim unless necessary."
+        )
+    else:
+        section_block = f"SECTION: {section_label}{lang_note}\n"
+    
+
+    # ── Compose the user turn with full context as a prefix ───────────────────
+    problem_block = problem_block + "\n\n" if problem_block else ""
+    section_block = section_block + "\n\n" if section_block else ""
     user_message = (
-        f"[Context: viewing {section_label} for problem {req.context.problemId}.{lang_note}]\n\n"
+        f"[QUESTION]\n"
         f"{req.question}"
     )
 
     history = [{"role": m.role, "content": m.content} for m in req.history]
 
     return StreamingResponse(
-        _text_sse_stream(chat_with_history_stream(history, user_message)),
+        _text_sse_stream(chat_with_history_stream(history, user_message, problem_description=problem_block + section_block)),
         media_type="text/event-stream",
     )

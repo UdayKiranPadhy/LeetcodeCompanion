@@ -158,14 +158,16 @@ export function ProblemPage() {
                     <FeedbackCard
                       type="correct"
                       items={problemHook.feedback.correct}
-                      problemId={problem.id}
+                      problem={problem}
+                      userThought={problemHook.userThought}
                     />
                   )}
                   {problemHook.feedback.incorrect.length > 0 && (
                     <FeedbackCard
                       type="incorrect"
                       items={problemHook.feedback.incorrect}
-                      problemId={problem.id}
+                      problem={problem}
+                      userThought={problemHook.userThought}
                     />
                   )}
                   <HintCard hints={problemHook.feedback.hints} />

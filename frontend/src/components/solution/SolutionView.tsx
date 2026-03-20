@@ -37,6 +37,7 @@ export function SolutionView({ problem, problemHook }: SolutionViewProps) {
     problemId: problem.id,
     section: 'code',
     language: activeLanguage,
+    problem,
   };
 
   // Trigger generation when language changes or on mount
@@ -84,7 +85,7 @@ export function SolutionView({ problem, problemHook }: SolutionViewProps) {
         <ThoughtSection
           content={solution.thoughtProcess ?? ''}
           loadState={sectionLoadState.thoughtProcess}
-          problemId={problem.id}
+          problem={problem}
           language={activeLanguage}
         />
       )}
@@ -94,7 +95,7 @@ export function SolutionView({ problem, problemHook }: SolutionViewProps) {
         <MathProofSection
           mathProof={solution.mathProof}
           loadState={sectionLoadState.mathProof}
-          problemId={problem.id}
+          problem={problem}
           language={activeLanguage}
         />
       )}

@@ -1,21 +1,26 @@
 import React, { useState } from 'react';
-import type { FeedbackItem, ChatContext } from '@/types';
+import type { FeedbackItem, ChatContext, Problem } from '@/types';
 import { ChatPanel } from '@/components/chat/ChatPanel';
 import { SpotlightCard } from '@/components/ui/SpotlightCard';
 
 interface FeedbackCardProps {
   type: 'correct' | 'incorrect';
   items: FeedbackItem[];
-  problemId: string;
+  problem: Problem;
+  userThought: string;
 }
 
-export function FeedbackCard({ type, items, problemId }: FeedbackCardProps) {
+export function FeedbackCard({ type, items, problem, userThought }: FeedbackCardProps) {
   const [chatOpen, setChatOpen] = useState(false);
 
   const isCorrect = type === 'correct';
   const context: ChatContext = {
-    problemId,
+    problemId: problem.id,
     section: 'thought-analysis',
+    problem,
+    userThought,
+    feedbackType: type,
+    feedbackItems: items,
   };
 
   if (items.length === 0) return null;

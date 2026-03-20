@@ -87,6 +87,10 @@ class ChatContext(BaseModel):
     problemId: str
     section: str  # 'thought-analysis' | 'thoughtProcess' | 'mathProof' | 'code'
     language: Optional[str] = None
+    problem: Optional[Problem] = None
+    userThought: Optional[str] = None
+    feedbackType: Optional[str] = None   # 'correct' | 'incorrect'
+    feedbackItems: Optional[List[FeedbackItem]] = None
 
 
 class SendFollowUpRequest(BaseModel):

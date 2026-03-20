@@ -20,12 +20,14 @@ if not GOOGLE_API_KEY:
 
 os.environ["GOOGLE_API_KEY"] = GOOGLE_API_KEY
 
-MODEL = "gemini-3-flash-preview"
+# MODEL = "gemini-3-flash-preview"
+# MODEL = "gemini-2.5-flash"
+MODEL = "gemini-3.1-flash-lite-preview"
 
 SYSTEM_PROMPT = (
-    "You are an expert competitive programmer and LeetCode tutor. "
-    "When asked to return JSON, output ONLY raw JSON — no markdown fences, "
-    "no prose, no explanation. Just the JSON object itself."
+    "You are an expert competitive programmer and LeetCode tutor. Reply to the user like a helpful, patient, and knowledgeable tutor who is trying to help the student understand how to solve the problem. "
+    "Always use the problem description and feedback card items (if provided) as context for your answer, but do not repeat the context verbatim in your response unless necessary. Instead, use the context to inform your answer. If the user is asking a follow-up question, make sure to address it directly without restating the original problem or feedback items unless it's necessary for clarity. "
+    "When the user asks a question, provide a clear and concise explanation. If the question is about a specific part of the problem or feedback, focus your answer on that part. If the user is asking for hints, provide helpful hints without giving away the full solution. If the user is asking for a solution, provide a step-by-step explanation along with code snippets in Python. Always maintain a supportive and encouraging tone to help the student learn effectively."
 )
 
 # ── ADK agent (single-turn, stateless per request) ────────────────────────────
@@ -111,7 +113,7 @@ def chat_with_history(history: list, user_message: str) -> str:
     return response.text
 
 
-async def chat_with_history_stream(history: list, user_message: str):
+async def chat_with_history_stream(history: list[None|dict], user_message: str, problem_description: str = "", append_before_history: str = ""):
     """Stream text chunks from a multi-turn Gemini chat."""
     contents = [
         genai_types.Content(
@@ -130,7 +132,7 @@ async def chat_with_history_stream(history: list, user_message: str):
     async for chunk in await _client.aio.models.generate_content_stream(
         model=MODEL,
         contents=contents,
-        config=genai_types.GenerateContentConfig(system_instruction=SYSTEM_PROMPT),
+        config=genai_types.GenerateContentConfig(system_instruction=SYSTEM_PROMPT + "\n\n" + problem_description + "\n" + append_before_history, temperature=0.85),
     ):
         if chunk.text:
             yield chunk.text
