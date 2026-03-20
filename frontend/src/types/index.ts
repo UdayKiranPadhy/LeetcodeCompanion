@@ -7,6 +7,7 @@ export interface ProblemExample {
   input: string;
   output: string;
   explanation?: string;
+  image?: string;
 }
 
 export interface Problem {

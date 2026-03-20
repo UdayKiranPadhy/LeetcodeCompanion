@@ -169,7 +169,19 @@ export function ProblemCard({ problem, defaultCollapsed = false }: ProblemCardPr
                       padding: 'var(--space-4)',
                     }}
                   >
-                    <p style={{ fontFamily: 'var(--font-code)', fontSize: 'var(--text-sm)', marginBottom: ex.explanation ? 'var(--space-2)' : '0' }}>
+                    {ex.image && (
+                      <img
+                        src={ex.image}
+                        alt={`Example ${i + 1}`}
+                        style={{
+                          display: 'block',
+                          maxWidth: '100%',
+                          borderRadius: 'var(--radius-sm)',
+                          marginBottom: 'var(--space-3)',
+                        }}
+                      />
+                    )}
+                    <p style={{ fontFamily: 'var(--font-code)', fontSize: 'var(--text-sm)', marginBottom: 'var(--space-2)' }}>
                       <span style={{ color: 'var(--color-text-secondary)' }}>Input: </span>
                       <span style={{ color: 'var(--color-text-primary)' }}>{ex.input}</span>
                     </p>

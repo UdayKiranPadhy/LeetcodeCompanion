@@ -8,6 +8,7 @@ class ProblemExample(BaseModel):
     input: str
     output: str
     explanation: Optional[str] = None
+    image: Optional[str] = None
 
 
 class Problem(BaseModel):

@@ -1,14 +1,19 @@
+import html
 import json as json_lib
+import re
+from urllib.parse import urlparse
 
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import StreamingResponse
 from crawl4ai.async_configs import CrawlerRunConfig
+from crawl4ai.extraction_strategy import JsonCssExtractionStrategy
 
 # Populated at startup by index.py lifespan — shared across all requests
 crawler = None
 
 from models import (
     Problem,
+    ProblemExample,
     ThoughtFeedback,
     MathProof,
     CodeStep,
@@ -20,13 +25,108 @@ from models import (
     SendFollowUpRequest,
 )
 from services import (
-    ask_agent,
     ask_agent_stream,
     chat_with_history_stream,
     strip_and_parse,
 )
 
 router = APIRouter()
+
+# ── LeetCode CSS extraction schema ────────────────────────────────────────────
+
+_LEETCODE_SCHEMA: dict[str, object] = {
+    "name": "LeetCode Problem",
+    "baseSelector": "head",
+    "fields": [
+        {
+            "name": "og_title",
+            "selector": "meta[property='og:title']",
+            "type": "attribute",
+            "attribute": "content",
+        },
+        {
+            "name": "page_title",
+            "selector": "title",
+            "type": "text",
+        },
+        {
+            "name": "meta_description",
+            "selector": "meta[name='description']",
+            "type": "attribute",
+            "attribute": "content",
+        },
+    ],
+}
+
+
+def _slug_from_url(url: str) -> str:
+    parts = urlparse(url).path.strip("/").split("/")
+    try:
+        return parts[parts.index("problems") + 1]
+    except (ValueError, IndexError):
+        return ""
+
+
+def _parse_meta_description(raw: str) -> tuple[str, list[dict[str, str | None]], list[str]]:
+    """Parse the LeetCode meta description string into (description, examples, constraints)."""
+    if not raw:
+        return "", [], []
+
+    text = html.unescape(raw).strip()
+
+    # Strip "Can you solve this real interview question? TITLE - " prefix
+    text = re.sub(r"^Can you solve this real interview question\?\s+.+?\s+-\s+", "", text)
+
+    # Strip trailing Follow-up section
+    text = re.split(r"\n\s*Follow[- ]?up\s*[:\u00a0]", text, maxsplit=1)[0].strip()
+
+    # ── Split into: description | examples + constraints ──────────────────────
+    main_parts = re.split(r"\n\s*Example\s+1\s*:", text, maxsplit=1)
+    description = main_parts[0].strip()
+    examples_and_rest = ("Example 1:" + main_parts[1]) if len(main_parts) > 1 else ""
+
+    # ── Split off constraints ─────────────────────────────────────────────────
+    rest_parts = re.split(r"\n\s*Constraints\s*:\s*\n", examples_and_rest, maxsplit=1)
+    examples_text = rest_parts[0]
+    constraints_text = rest_parts[1] if len(rest_parts) > 1 else ""
+
+    # ── Parse each example block ──────────────────────────────────────────────
+    # Group 1: optional bracketed image URL(s) before Input:
+    # Group 2: Input/Output/Explanation block
+    _EXAMPLE_RE = re.compile(
+        r"Example\s+\d+\s*:\s*\n+"
+        r"((?:\[[^\]]*\]\s*\n+)*)"   # optional image lines, e.g. [https://...]
+        r"\s*(Input:.+?)(?=\n\s*Example\s+\d+|\Z)",
+        re.DOTALL,
+    )
+    examples: list[dict[str, str | None]] = []
+    for match in _EXAMPLE_RE.finditer(examples_text):
+        image_lines = match.group(1).strip()
+        block = match.group(2).strip()
+
+        # Extract first image URL from bracketed lines
+        img_match = re.search(r"\[(https?://[^\]]+)\]", image_lines)
+        image_url = img_match.group(1).strip() if img_match else None
+
+        inp = re.search(r"Input:\s*(.+?)(?=\nOutput:)", block, re.DOTALL)
+        out = re.search(r"Output:\s*(.+?)(?=\nExplanation:|\Z)", block, re.DOTALL)
+        exp = re.search(r"Explanation:\s*(.+?)$", block, re.DOTALL)
+        if inp and out:
+            examples.append({
+                "input": inp.group(1).strip(),
+                "output": out.group(1).strip(),
+                "explanation": exp.group(1).strip() if exp else None,
+                "image": image_url,
+            })
+
+    # ── Parse constraints: bullet lines starting with * ───────────────────────
+    constraints: list[str] = [
+        line.lstrip("* \t").strip()
+        for line in constraints_text.splitlines()
+        if re.match(r"\s*\*", line) and line.strip()
+    ]
+
+    return description, examples, constraints
 
 
 # ── SSE helpers ───────────────────────────────────────────────────────────────
@@ -66,7 +166,10 @@ async def _text_sse_stream(chunks_gen):
 @router.post("/fetch-problem", response_model=Problem)
 async def fetch_problem(req: FetchProblemRequest):
     """Crawl a LeetCode problem URL and return structured problem data."""
-    result = await crawler.arun(url=req.url, config=CrawlerRunConfig())
+    result = await crawler.arun(
+        url=req.url,
+        config=CrawlerRunConfig(extraction_strategy=JsonCssExtractionStrategy(_LEETCODE_SCHEMA)),
+    )
 
     if not result.success:
         raise HTTPException(
@@ -74,40 +177,52 @@ async def fetch_problem(req: FetchProblemRequest):
             detail=f"Failed to crawl URL: {result.error_message}",
         )
 
-    content = result.markdown or result.cleaned_html or ""
-
-    prompt = f"""You are given the scraped markdown content of a LeetCode problem page.
-Extract the problem details and return them as a single JSON object.
-
-PAGE CONTENT :
-{content}
-
-Return ONLY a raw JSON object — no markdown fences, no explanation:
-{{
-  "id": "<problem number as string, e.g. '1'>",
-  "title": "<Problem Title>",
-  "slug": "<problem-slug-from-url>",
-  "difficulty": "<Easy | Medium | Hard>",
-  "tags": ["<tag1>", "<tag2>"],
-  "description": "<full problem description in markdown>",
-  "examples": [
-    {{
-      "input": "<example input>",
-      "output": "<example output>",
-      "explanation": "<optional explanation or omit key>"
-    }}
-  ],
-  "constraints": ["<constraint 1>", "<constraint 2>"]
-}}"""
-
-    raw = await ask_agent(prompt)
     try:
-        data = strip_and_parse(raw)
-        return Problem(**data)
+        items: list[dict[str, object]] = json_lib.loads(result.extracted_content or "[]")
+        item = items[0] if items else {}
+
+        # Title: prefer og:title ("Two Sum - LeetCode"), fall back to <title>
+        raw_title = str(item.get("og_title", "") or item.get("page_title", ""))
+        title = re.sub(r"\s*[-–|]\s*LeetCode.*$", "", raw_title).strip()
+
+        # Slug from URL
+        slug = _slug_from_url(req.url)
+
+        # Difficulty from markdown (reliable plain-text scan)
+        diff_m = re.search(r"\b(Easy|Medium|Hard)\b", result.markdown or "")
+        difficulty = diff_m.group(1) if diff_m else "Unknown"
+
+        # Description, examples, constraints from meta description tag
+        description, examples, constraints = _parse_meta_description(
+            str(item.get("meta_description", ""))
+        )
+
+        # Tags from the rendered page links
+        tag_soup_text: str = str(result.markdown or "")
+        tags = list(dict.fromkeys(re.findall(r"(?<=/tag/)[a-z0-9-]+", tag_soup_text)))
+
+        return Problem(
+            id="",
+            title=title,
+            slug=slug,
+            difficulty=difficulty,
+            tags=tags,
+            description=description,
+            examples=[
+                ProblemExample(
+                    input=ex["input"] or "",
+                    output=ex["output"] or "",
+                    explanation=ex.get("explanation"),
+                    image=ex.get("image"),
+                )
+                for ex in examples
+            ],
+            constraints=constraints,
+        )
     except Exception as e:
         raise HTTPException(
             status_code=500,
-            detail=f"Failed to parse problem data: {e}\n\nRaw response: {raw[:600]}",
+            detail=f"Failed to parse problem data: {e}",
         )
 
 
