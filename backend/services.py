@@ -20,7 +20,7 @@ if not GOOGLE_API_KEY:
 
 os.environ["GOOGLE_API_KEY"] = GOOGLE_API_KEY
 
-MODEL = "gemini-2.5-flash"
+MODEL = "gemini-3-flash-preview"
 
 SYSTEM_PROMPT = (
     "You are an expert competitive programmer and LeetCode tutor. "

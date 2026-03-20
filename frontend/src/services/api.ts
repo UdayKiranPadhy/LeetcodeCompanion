@@ -104,7 +104,7 @@ export async function analyzeThoughtProcess(
   problem: Problem,
   userThought: string,
 ): Promise<ThoughtFeedback> {
-  return streamToResult<ThoughtFeedback>('/analyze-thought', { problem, user_thought: userThought });
+  return post<ThoughtFeedback>('/analyze-thought', { problem, user_thought: userThought });
 }
 
 export async function generateThoughtProcess(

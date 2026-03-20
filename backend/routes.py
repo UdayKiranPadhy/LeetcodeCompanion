@@ -25,6 +25,7 @@ from models import (
     SendFollowUpRequest,
 )
 from services import (
+    ask_agent,
     ask_agent_stream,
     chat_with_history_stream,
     strip_and_parse,
@@ -226,44 +227,114 @@ async def fetch_problem(req: FetchProblemRequest):
         )
 
 
-@router.post("/analyze-thought")
+@router.post("/analyze-thought", response_model=ThoughtFeedback)
 async def analyze_thought(req: AnalyzeThoughtRequest):
-    """Analyze the user's thought process and stream structured feedback."""
-    prompt = f"""You are reviewing a student's thought process for a LeetCode problem.
+    """Analyze the user's thought process and return structured feedback."""
+    prompt = f"""
+You are acting as a senior technical interviewer reviewing a student's thought process for a LeetCode-style problem.
 
-PROBLEM: {req.problem.title} ({req.problem.difficulty})
-DESCRIPTION:
+Your goal is to evaluate reasoning quality — not just correctness.
+
+---------------------
+PROBLEM
+---------------------
+Title: {req.problem.title}
+Difficulty: {req.problem.difficulty}
+
+Description:
 {req.problem.description}
 
-STUDENT'S THOUGHT PROCESS:
+Examples:
+{"".join(f'- Input: {ex.input}\n  Output: {ex.output}\n  Explanation: {ex.explanation}\n  Image: {ex.image}\n\n' for ex in req.problem.examples)} 
+
+Constraints:
+{"".join(f'- {c}\n' for c in req.problem.constraints)} 
+
+---------------------
+STUDENT THOUGHT PROCESS
+---------------------
 {req.user_thought}
 
-Identify what the student got right, what needs correction, and provide 3 progressive hints
-(level 1 = subtle nudge, level 2 = moderate, level 3 = near-explicit).
+---------------------
+EVALUATION INSTRUCTIONS
+---------------------
 
-Return ONLY a raw JSON object:
+1. Identify ALL valid insights the student demonstrated.
+   - Include correct intuitions, partial correctness, and good problem decomposition.
+
+2. Identify ALL issues or gaps.
+   - Logical errors
+   - Incorrect assumptions
+   - Missed edge cases
+   - Inefficient approach (time/space complexity)
+   - Incomplete reasoning
+   - Flawed code snippets (if any)
+   - In the Logical correct check for Time and Space complexity and verify if they are correct or not based constraints.
+
+3. Provide EXACTLY 3 progressive hints:
+   - Level 1 (subtle): gentle directional nudge, no solution structure
+   - Level 2 (moderate): clearer guidance, may suggest approach or pattern
+   - Level 3 (strong): near-explicit, but DO NOT provide full code or complete solution
+
+---------------------
+STRICT RULES
+---------------------
+- Be concise but educational.
+- Each point must be atomic (one idea per item).
+- Avoid repeating the same idea across sections.
+- Do NOT provide full solution or code.
+- Prefer actionable feedback over vague comments.
+- If the student's approach is completely wrong, still extract any partial positives if possible.
+- If no correct points exist, return an empty "correct" array.
+
+---------------------
+OUTPUT FORMAT (STRICT JSON ONLY)
+---------------------
+Return ONLY a valid raw JSON object. No markdown, no explanations.
+
 {{
   "correct": [
-    {{"id": "c1", "text": "<short label>", "detail": "<educational explanation>"}}
+    {{
+      "id": "c1",
+      "text": "<short label>",
+      "detail": "<clear explanation of why it's correct and why it matters>"
+    }}
   ],
   "incorrect": [
-    {{"id": "i1", "text": "<short label>", "detail": "<what's wrong and how to fix it>"}}
+    {{
+      "id": "i1",
+      "text": "<short label>",
+      "detail": "<what is wrong, why it is wrong, and how to fix or think about it>"
+    }}
   ],
   "hints": [
-    {{"id": "h1", "level": 1, "text": "<subtle hint>"}},
-    {{"id": "h2", "level": 2, "text": "<moderate hint>"}},
-    {{"id": "h3", "level": 3, "text": "<near-explicit hint>"}}
+    {{
+      "id": "h1",
+      "level": 1,
+      "text": "<subtle directional hint>"
+    }},
+    {{
+      "id": "h2",
+      "level": 2,
+      "text": "<moderate hint with clearer guidance>"
+    }},
+    {{
+      "id": "h3",
+      "level": 3,
+      "text": "<near-explicit hint without giving full solution>"
+    }}
   ]
-}}"""
-
-    def validate(text: str) -> dict:
-        data = strip_and_parse(text)
-        return ThoughtFeedback(**data).model_dump()
-
-    return StreamingResponse(
-        _json_sse_stream(ask_agent_stream(prompt), validate),
-        media_type="text/event-stream",
-    )
+}}
+"""
+    raw = await ask_agent(prompt)
+    try:
+        data = strip_and_parse(raw)
+        return ThoughtFeedback(**data)
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to parse thought feedback: {e}\n\nRaw: {raw[:600]}",
+        )
 
 
 @router.post("/generate-thought-process")
