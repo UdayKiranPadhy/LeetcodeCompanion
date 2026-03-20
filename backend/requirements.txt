@@ -1,0 +1,6 @@
+fastapi
+uvicorn[standard]
+crawl4ai
+google-adk
+python-dotenv
+pydantic

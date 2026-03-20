@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { HeroSection } from '@/components/home/HeroSection';
-import { fetchProblemDetails } from '@/services/mockApi';
+import { fetchProblemDetails } from '@/services/api';
 
 export function HomePage() {
   const navigate = useNavigate();

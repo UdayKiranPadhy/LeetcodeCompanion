@@ -14,7 +14,7 @@ import {
   generateThoughtProcess,
   generateMathProof,
   generateCode,
-} from '@/services/mockApi';
+} from '@/services/api';
 
 interface UseProblemReturn {
   problem: Problem | null;
@@ -73,9 +73,12 @@ export function useProblem(): UseProblemReturn {
     setSectionLoadState({ thoughtProcess: 'loading', mathProof: 'idle', code: 'idle' });
 
     try {
-      // Step 1: Thought process
-      const tp = await generateThoughtProcess(problem, lang);
-      setSolution(prev => ({ ...prev, language: lang, thoughtProcess: tp }));
+      // Step 1: Thought process (streamed progressively)
+      let tpAccumulated = '';
+      await generateThoughtProcess(problem, lang, (chunk) => {
+        tpAccumulated += chunk;
+        setSolution(prev => ({ ...prev, language: lang, thoughtProcess: tpAccumulated }));
+      });
       setSectionLoadState({ thoughtProcess: 'success', mathProof: 'loading', code: 'idle' });
 
       // Step 2: Math proof
