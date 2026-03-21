@@ -149,6 +149,8 @@ export function CodeBlock({ code, language, steps, activeStep }: CodeBlockProps)
               right: 0,
               pointerEvents: 'none',
               zIndex: 1,
+              fontSize: '13px',
+              lineHeight: '1.6',
             }}
           >
             {lines.map((_, lineIdx) => {
