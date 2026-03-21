@@ -19,6 +19,7 @@ export function ThoughtSection({ content, loadState, problem, language }: Though
     section: 'thoughtProcess',
     language,
     problem,
+    thoughtProcessContent: content,
   };
 
   return (

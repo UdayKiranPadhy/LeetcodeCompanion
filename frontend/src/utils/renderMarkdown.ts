@@ -85,10 +85,19 @@ function processLines(text: string): string {
 }
 
 export function renderMarkdown(text: string): string {
-  // Split on block math ($$...$$) so we don't line-process inside it
-  const segments = text.split(/(\$\$[\s\S]+?\$\$)/g);
+  // Split on fenced code blocks and block math first, preserving them as-is
+  const segments = text.split(/(```[\s\S]*?```|\$\$[\s\S]+?\$\$)/g);
 
   return segments.map(seg => {
+    // Fenced code block
+    if (seg.startsWith('```')) {
+      const firstNewline = seg.indexOf('\n');
+      const code = (firstNewline > -1 ? seg.slice(firstNewline + 1) : seg.slice(3))
+        .replace(/```$/, '').trimEnd();
+      const escaped = code.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+      return `<pre style="margin:10px 0;padding:12px 14px;background:var(--color-bg-secondary);border:1px solid var(--color-border);border-radius:var(--radius-md);overflow-x:auto"><code style="font-family:var(--font-code);font-size:var(--text-sm);color:var(--color-text-primary)">${escaped}</code></pre>`;
+    }
+    // Block math
     if (seg.startsWith('$$') && seg.endsWith('$$')) {
       const math = seg.slice(2, -2).trim();
       try {

@@ -38,6 +38,9 @@ export function SolutionView({ problem, problemHook }: SolutionViewProps) {
     section: 'code',
     language: activeLanguage,
     problem,
+    codeContent: solution.code && solution.steps?.length
+      ? { code: solution.code, steps: solution.steps }
+      : undefined,
   };
 
   // Trigger generation when language changes or on mount

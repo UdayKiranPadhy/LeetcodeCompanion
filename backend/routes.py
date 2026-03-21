@@ -484,6 +484,40 @@ async def send_followup(req: SendFollowUpRequest):
             f"Use the student's thought process and these feedback items as context to answer their follow-up. "
             f"Do NOT repeat the items verbatim unless necessary."
         )
+    elif ctx.section == "thoughtProcess" and ctx.thoughtProcessContent:
+        section_block = (
+            f"SECTION: {section_label}{lang_note}\n\n"
+            f"THOUGHT PROCESS CONTENT (what was shown to the student):\n"
+            f"{ctx.thoughtProcessContent}\n\n"
+            f"Answer the student's follow-up question using the content above as context."
+        )
+    elif ctx.section == "mathProof" and ctx.mathProofContent:
+        proof = ctx.mathProofContent
+        proof_text = (
+            f"Time Complexity: {proof.timeComplexity}\n"
+            f"Space Complexity: {proof.spaceComplexity}\n\n"
+            f"Explanation:\n{proof.explanation}"
+        )
+        if proof.correctnessProof:
+            proof_text += f"\n\nCorrectness Proof:\n{proof.correctnessProof}"
+        section_block = (
+            f"SECTION: {section_label}{lang_note}\n\n"
+            f"COMPLEXITY ANALYSIS CONTENT (what was shown to the student):\n"
+            f"{proof_text}\n\n"
+            f"Answer the student's follow-up question using the analysis above as context."
+        )
+    elif ctx.section == "code" and ctx.codeContent:
+        steps_text = "\n".join(
+            f"Lines {s.lineRange[0]}-{s.lineRange[1]}: {s.explanation}"
+            for s in ctx.codeContent.steps
+        )
+        section_block = (
+            f"SECTION: {section_label}{lang_note}\n\n"
+            f"CODE SOLUTION (what was shown to the student):\n"
+            f"```\n{ctx.codeContent.code}\n```\n\n"
+            f"STEP-BY-STEP BREAKDOWN:\n{steps_text}\n\n"
+            f"Answer the student's follow-up question using the code and breakdown above as context."
+        )
     else:
         section_block = f"SECTION: {section_label}{lang_note}\n"
     

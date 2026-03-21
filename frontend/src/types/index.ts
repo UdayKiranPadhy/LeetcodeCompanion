@@ -75,6 +75,10 @@ export interface ChatContext {
   userThought?: string;
   feedbackType?: 'correct' | 'incorrect';
   feedbackItems?: FeedbackItem[];
+  // section content for follow-up context
+  thoughtProcessContent?: string;
+  mathProofContent?: MathProof;
+  codeContent?: { code: string; steps: CodeStep[] };
 }
 
 export interface SectionLoadState {

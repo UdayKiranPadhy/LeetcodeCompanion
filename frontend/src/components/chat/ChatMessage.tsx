@@ -1,16 +1,9 @@
 import React from 'react';
 import type { ChatMessage as ChatMessageType } from '@/types';
+import { renderMarkdown } from '@/utils/renderMarkdown';
 
 interface ChatMessageProps {
   message: ChatMessageType;
-}
-
-function renderMarkdown(text: string): string {
-  return text
-    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-    .replace(/`([^`]+)`/g, '<code style="font-family:var(--font-code);background:rgba(0,0,0,0.06);padding:1px 5px;border-radius:3px;font-size:0.88em">$1</code>')
-    .replace(/\n\n/g, '</p><p style="margin-top:6px">')
-    .replace(/\n/g, '<br/>');
 }
 
 export function ChatMessage({ message }: ChatMessageProps) {
@@ -37,7 +30,7 @@ export function ChatMessage({ message }: ChatMessageProps) {
           border: isUser ? 'none' : '1px solid var(--color-border)',
           wordBreak: 'break-word',
         }}
-        dangerouslySetInnerHTML={{ __html: `<p>${renderMarkdown(message.content)}</p>` }}
+        dangerouslySetInnerHTML={{ __html: renderMarkdown(message.content) }}
       />
     </div>
   );

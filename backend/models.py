@@ -83,6 +83,11 @@ class GenerateCodeRequest(BaseModel):
     language: str
 
 
+class CodeContent(BaseModel):
+    code: str
+    steps: List[CodeStep]
+
+
 class ChatContext(BaseModel):
     problemId: str
     section: str  # 'thought-analysis' | 'thoughtProcess' | 'mathProof' | 'code'
@@ -91,6 +96,10 @@ class ChatContext(BaseModel):
     userThought: Optional[str] = None
     feedbackType: Optional[str] = None   # 'correct' | 'incorrect'
     feedbackItems: Optional[List[FeedbackItem]] = None
+    # section content for follow-up context
+    thoughtProcessContent: Optional[str] = None
+    mathProofContent: Optional[MathProof] = None
+    codeContent: Optional[CodeContent] = None
 
 
 class SendFollowUpRequest(BaseModel):

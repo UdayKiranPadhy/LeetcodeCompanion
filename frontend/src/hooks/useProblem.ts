@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import type {
   Problem,
   Language,
@@ -53,6 +53,7 @@ export function useProblem(): UseProblemReturn {
   const [solution, setSolution] = useState<Partial<Solution>>({});
   const [sectionLoadState, setSectionLoadState] = useState<SectionLoadState>(INITIAL_SECTION_STATE);
   const [isGenerating, setIsGenerating] = useState(false);
+  const isGeneratingRef = useRef(false);
   const [activeLanguage, setActiveLanguage] = useState<Language>('python');
 
   const submitThought = useCallback(async (thought: string) => {
@@ -69,8 +70,9 @@ export function useProblem(): UseProblemReturn {
   }, [problem]);
 
   const generateSolution = useCallback(async (lang: Language) => {
-    if (!problem || isGenerating) return;
+    if (!problem || isGeneratingRef.current) return;
 
+    isGeneratingRef.current = true;
     setIsGenerating(true);
     setSolution({});
     setSectionLoadState({ thoughtProcess: 'loading', mathProof: 'idle', code: 'idle' });
@@ -101,9 +103,10 @@ export function useProblem(): UseProblemReturn {
         ...(prev.code === 'loading' && { code: 'error' }),
       }));
     } finally {
+      isGeneratingRef.current = false;
       setIsGenerating(false);
     }
-  }, [problem, isGenerating]);
+  }, [problem]);
 
   const handleSetActiveLanguage = useCallback((lang: Language) => {
     setActiveLanguage(lang);

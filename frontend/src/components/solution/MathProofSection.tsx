@@ -19,6 +19,7 @@ export function MathProofSection({ mathProof, loadState, problem, language }: Ma
     section: 'mathProof',
     language,
     problem,
+    mathProofContent: mathProof,
   };
 
   return (
