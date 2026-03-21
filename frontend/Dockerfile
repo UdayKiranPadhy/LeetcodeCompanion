@@ -12,6 +12,10 @@ RUN npm ci
 # Copy source files
 COPY . .
 
+# Accept the backend URL as a build-time argument and expose it to Vite
+ARG VITE_API_URL
+ENV VITE_API_URL=$VITE_API_URL
+
 # Build the production bundle
 RUN npm run build
 

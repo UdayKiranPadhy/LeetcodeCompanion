@@ -1,0 +1,36 @@
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    env_file:
+      - ./backend/.env          # Copy from backend/.env.example — never commit
+    environment:
+      PYTHONUNBUFFERED: "1"
+    restart: unless-stopped
+    healthcheck:
+      # crawl4ai launches headless Chromium at startup — allow up to 60s before marking unhealthy
+      test: ["CMD", "curl", "-f", "http://localhost:8000/docs"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        # VITE_API_URL is baked into the JS bundle at build time.
+        # This value is what the *browser* uses, so it must be reachable from the user's machine.
+        # For local dev on the same host, localhost:8000 is correct.
+        # For production, replace with your backend's public URL.
+        VITE_API_URL: "http://localhost:8000"
+    ports:
+      - "8080:8080"
+    depends_on:
+      backend:
+        condition: service_healthy
+    restart: unless-stopped

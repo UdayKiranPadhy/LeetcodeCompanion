@@ -5,6 +5,7 @@ import type {
   MathProof,
   CodeSolution,
   ChatContext,
+  CodeStep,
 } from '@/types';
 
 /* ── Helpers ──────────────────────────────────────────────────────────────── */
