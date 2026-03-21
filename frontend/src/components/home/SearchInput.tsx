@@ -7,65 +7,54 @@ interface SearchInputProps {
   onFocusChange?: (focused: boolean) => void;
 }
 
-const PLACEHOLDERS = [
-  'Paste a LeetCode URL…',
-  'Type a problem title (e.g. Two Sum)…',
-  'Paste the full problem description…',
-];
+const LEETCODE_URL_RE = /^(https?:\/\/)?(www\.)?leetcode\.com\/problems\/[\w-]+\/?/i;
+
+function isValidLeetCodeUrl(value: string): boolean {
+  return LEETCODE_URL_RE.test(value.trim());
+}
 
 export function SearchInput({ onSubmit, isLoading = false, onFocusChange }: SearchInputProps) {
   const [value, setValue] = useState('');
-  const [placeholderIndex, setPlaceholderIndex] = useState(0);
-  const [placeholderVisible, setPlaceholderVisible] = useState(true);
   const [isFocused, setIsFocused] = useState(false);
   const [shaking, setShaking] = useState(false);
-  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
-
-  // Auto-resize textarea
-  useEffect(() => {
-    if (textareaRef.current) {
-      textareaRef.current.style.height = 'auto';
-      textareaRef.current.style.height = `${textareaRef.current.scrollHeight}px`;
-    }
-  }, [value]);
-
-  // Cycle placeholder
-  useEffect(() => {
-    if (isFocused || value) return;
-
-    intervalRef.current = setInterval(() => {
-      setPlaceholderVisible(false);
-      setTimeout(() => {
-        setPlaceholderIndex(i => (i + 1) % PLACEHOLDERS.length);
-        setPlaceholderVisible(true);
-      }, 300);
-    }, 2100);
-
-    return () => {
-      if (intervalRef.current) clearInterval(intervalRef.current);
-    };
-  }, [isFocused, value]);
+  const [validationError, setValidationError] = useState<string | null>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     onFocusChange?.(isFocused);
   }, [isFocused, onFocusChange]);
 
+  // Clear error when user edits
+  useEffect(() => {
+    if (validationError) setValidationError(null);
+  }, [value]);
+
   function handleSubmit() {
-    if (!value.trim()) {
+    const trimmed = value.trim();
+    if (!trimmed) {
       setShaking(true);
       setTimeout(() => setShaking(false), 400);
+      setValidationError('Please paste a LeetCode problem URL.');
       return;
     }
-    onSubmit(value.trim());
+    if (!isValidLeetCodeUrl(trimmed)) {
+      setShaking(true);
+      setTimeout(() => setShaking(false), 400);
+      setValidationError('Please enter a valid LeetCode URL, e.g. https://leetcode.com/problems/two-sum/');
+      return;
+    }
+    setValidationError(null);
+    onSubmit(trimmed);
   }
 
   function handleKeyDown(e: React.KeyboardEvent) {
-    if (e.key === 'Enter' && !e.shiftKey) {
+    if (e.key === 'Enter') {
       e.preventDefault();
       handleSubmit();
     }
   }
+
+  const hasError = !!validationError;
 
   return (
     <div style={{ position: 'relative', width: '100%', maxWidth: '620px' }}>
@@ -86,7 +75,7 @@ export function SearchInput({ onSubmit, isLoading = false, onFocusChange }: Sear
           pointerEvents: 'none',
         }}
       >
-        Enter a LeetCode URL, problem title, or description
+        Paste a LeetCode problem URL
       </div>
 
       <div
@@ -94,10 +83,9 @@ export function SearchInput({ onSubmit, isLoading = false, onFocusChange }: Sear
           display: 'flex',
           alignItems: 'center',
           background: 'var(--color-bg-primary)',
-          border: `1px solid ${isFocused ? 'var(--color-border-focus)' : 'var(--color-border)'}`,
-          borderRadius: '28px', // Matched height/2
-          minHeight: '56px',
-          height: 'auto',
+          border: `1px solid ${hasError ? 'var(--color-error)' : isFocused ? 'var(--color-border-focus)' : 'var(--color-border)'}`,
+          borderRadius: '28px',
+          height: '56px',
           padding: '8px 6px 8px 20px',
           boxShadow: isFocused ? 'var(--shadow-focus)' : 'var(--shadow-md)',
           transition:
@@ -107,58 +95,31 @@ export function SearchInput({ onSubmit, isLoading = false, onFocusChange }: Sear
           gap: 'var(--space-3)',
         }}
       >
-        {/* Input + animated placeholder */}
-        <div style={{ flex: 1, position: 'relative', minHeight: '24px', display: 'flex', alignItems: 'center' }}>
-          {/* Animated placeholder */}
-          {!value && !isFocused && (
-            <span
-              key={placeholderIndex}
-              style={{
-                position: 'absolute',
-                color: 'var(--color-text-tertiary)',
-                fontSize: 'var(--text-lg)',
-                pointerEvents: 'none',
-                userSelect: 'none',
-                animation: placeholderVisible
-                  ? 'placeholder-in 300ms var(--ease-decelerate) forwards'
-                  : 'placeholder-out 250ms var(--ease-accelerate) forwards',
-                whiteSpace: 'nowrap',
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-                maxWidth: '100%',
-                lineHeight: '24px', // Match textarea line-height
-              }}
-            >
-              {PLACEHOLDERS[placeholderIndex]}
-            </span>
-          )}
-
-          <textarea
-            ref={textareaRef}
-            value={value}
-            onChange={e => setValue(e.target.value)}
-            onKeyDown={handleKeyDown}
-            onFocus={() => setIsFocused(true)}
-            onBlur={() => setIsFocused(false)}
-            rows={1}
-            style={{
-              width: '100%',
-              background: 'transparent',
-              border: 'none',
-              outline: 'none',
-              fontFamily: 'var(--font-body)',
-              fontSize: 'var(--text-md)',
-              lineHeight: '24px',
-              color: 'var(--color-text-primary)',
-              caretColor: 'var(--color-accent)',
-              resize: 'none',
-              overflow: 'hidden',
-              padding: 0,
-              margin: 0,
-            }}
-            aria-label="Enter a LeetCode URL, problem title, or paste the problem description"
-          />
-        </div>
+        <input
+          ref={inputRef}
+          type="url"
+          value={value}
+          onChange={e => setValue(e.target.value)}
+          onKeyDown={handleKeyDown}
+          onFocus={() => setIsFocused(true)}
+          onBlur={() => setIsFocused(false)}
+          placeholder="https://leetcode.com/problems/..."
+          style={{
+            flex: 1,
+            background: 'transparent',
+            border: 'none',
+            outline: 'none',
+            fontFamily: 'var(--font-body)',
+            fontSize: 'var(--text-md)',
+            lineHeight: '24px',
+            color: 'var(--color-text-primary)',
+            caretColor: 'var(--color-accent)',
+            padding: 0,
+            margin: 0,
+            minWidth: 0,
+          }}
+          aria-label="Paste a LeetCode problem URL"
+        />
 
         {/* Submit button */}
         <button
@@ -198,24 +159,23 @@ export function SearchInput({ onSubmit, isLoading = false, onFocusChange }: Sear
               Analyzing…
             </>
           ) : (
-            <>
-              Explore
-            </>
+            'Explore'
           )}
         </button>
       </div>
 
-      {/* Hint text */}
+      {/* Hint / error text */}
       <p
         style={{
           marginTop: 'var(--space-3)',
           fontSize: 'var(--text-base)',
-          color: 'var(--color-text-tertiary)',
+          color: hasError ? 'var(--color-error)' : 'var(--color-text-tertiary)',
           textAlign: 'center',
           lineHeight: 'var(--leading-normal)',
+          transition: 'color var(--duration-fast)',
         }}
       >
-        Accepts LeetCode URLs, problem titles, or full descriptions
+        {hasError ? validationError : 'Paste a LeetCode problem URL to get started'}
       </p>
     </div>
   );

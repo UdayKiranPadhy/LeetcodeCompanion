@@ -3,7 +3,7 @@ import type {
   Language,
   ThoughtFeedback,
   MathProof,
-  CodeStep,
+  CodeSolution,
   ChatContext,
 } from '@/types';
 
@@ -269,8 +269,10 @@ export async function generateMathProof(
 ): Promise<MathProof> {
   await delay(700, 1000);
   return {
-    timeComplexity: 'O(n)',
-    spaceComplexity: 'O(n)',
+    solutions: [
+      { name: 'Brute Force', timeComplexity: 'O(n²)', spaceComplexity: 'O(1)' },
+      { name: 'Optimal (Hash Map)', timeComplexity: 'O(n)', spaceComplexity: 'O(n)' },
+    ],
     explanation: `**Time Complexity — O(n)**
 
 We traverse the array exactly once. For each element, we perform:
@@ -299,11 +301,13 @@ When we process index **j** (the larger index in the pair):
 export async function generateCode(
   _problem: Problem,
   language: Language,
-): Promise<{ code: string; steps: CodeStep[] }> {
+): Promise<{ solutions: CodeSolution[] }> {
   await delay(600, 900);
   return {
-    code: MOCK_CODE[language],
-    steps: MOCK_STEPS[language],
+    solutions: [
+      { name: 'Brute Force', code: MOCK_CODE[language], steps: MOCK_STEPS[language] },
+      { name: 'Optimal (Hash Map)', code: MOCK_CODE[language], steps: MOCK_STEPS[language] },
+    ],
   };
 }
 

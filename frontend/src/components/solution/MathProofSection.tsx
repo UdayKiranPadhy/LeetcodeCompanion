@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import type { LoadingState, MathProof, ChatContext, Language, Problem } from '@/types';
+import type { LoadingState, MathProof, SolutionComplexity, ChatContext, Language, Problem } from '@/types';
 import { ChatPanel } from '@/components/chat/ChatPanel';
 import { SpotlightCard } from '@/components/ui/SpotlightCard';
 import { renderMarkdown } from '@/utils/renderMarkdown';
@@ -16,8 +16,13 @@ export function MathProofSection({ mathProof, loadState, problem, language }: Ma
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [contentHeight, setContentHeight] = useState<number | 'auto'>('auto');
   const contentRef = useRef<HTMLDivElement>(null);
+  const hasMounted = useRef(false);
 
   useEffect(() => {
+    if (!hasMounted.current) {
+      hasMounted.current = true;
+      return;
+    }
     if (!contentRef.current) return;
     if (isCollapsed) {
       setContentHeight(contentRef.current.scrollHeight);
@@ -142,50 +147,45 @@ export function MathProofSection({ mathProof, loadState, problem, language }: Ma
             </div>
           ) : mathProof ? (
             <>
-              {/* Complexity chips */}
-              <div
-                style={{
-                  display: 'flex',
-                  gap: 'var(--space-3)',
-                  flexWrap: 'wrap',
-                  marginBottom: 'var(--space-5)',
-                }}
-              >
-                {[
-                  { label: 'Time', value: mathProof.timeComplexity },
-                  { label: 'Space', value: mathProof.spaceComplexity },
-                ].map(({ label, value }) => (
-                  <div
-                    key={label}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 'var(--space-2)',
-                      padding: '6px 14px',
-                      background: 'var(--color-bg-secondary)',
-                      border: '1px solid var(--color-border)',
-                      borderRadius: 'var(--radius-md)',
-                    }}
-                  >
+              {/* Complexity chips — one row per solution */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)', marginBottom: 'var(--space-5)' }}>
+                {mathProof.solutions.map((sol: SolutionComplexity) => (
+                  <div key={sol.name} style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 'var(--space-2)' }}>
                     <span
                       style={{
                         fontSize: 'var(--text-sm)',
-                        color: 'var(--color-text-tertiary)',
-                        fontFamily: 'var(--font-body)',
-                      }}
-                    >
-                      {label}:
-                    </span>
-                    <span
-                      style={{
-                        fontSize: 'var(--text-base)',
                         fontWeight: 'var(--weight-semibold)',
-                        color: 'var(--color-text-primary)',
-                        fontFamily: 'var(--font-code)',
+                        color: 'var(--color-text-secondary)',
+                        fontFamily: 'var(--font-body)',
+                        minWidth: '90px',
                       }}
                     >
-                      {value}
+                      {sol.name}
                     </span>
+                    {[
+                      { label: 'Time', value: sol.timeComplexity },
+                      { label: 'Space', value: sol.spaceComplexity },
+                    ].map(({ label, value }) => (
+                      <div
+                        key={label}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 'var(--space-2)',
+                          padding: '4px 12px',
+                          background: 'var(--color-bg-secondary)',
+                          border: '1px solid var(--color-border)',
+                          borderRadius: 'var(--radius-md)',
+                        }}
+                      >
+                        <span style={{ fontSize: 'var(--text-sm)', color: 'var(--color-text-tertiary)', fontFamily: 'var(--font-body)' }}>
+                          {label}:
+                        </span>
+                        <span style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--weight-semibold)', color: 'var(--color-text-primary)', fontFamily: 'var(--font-code)' }}>
+                          {value}
+                        </span>
+                      </div>
+                    ))}
                   </div>
                 ))}
               </div>

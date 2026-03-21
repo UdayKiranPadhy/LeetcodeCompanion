@@ -16,8 +16,13 @@ export function ProblemCard({ problem, defaultCollapsed = false }: ProblemCardPr
     defaultCollapsed ? 0 : 'auto',
   );
   const contentRef = useRef<HTMLDivElement>(null);
+  const hasMounted = useRef(false);
 
   useEffect(() => {
+    if (!hasMounted.current) {
+      hasMounted.current = true;
+      return;
+    }
     if (!contentRef.current) return;
     if (isCollapsed) {
       // First set exact height, then animate to 0

@@ -39,9 +39,14 @@ export interface ThoughtFeedback {
   hints: Hint[];
 }
 
-export interface MathProof {
+export interface SolutionComplexity {
+  name: string;           // e.g. "Brute Force", "Optimal (Hash Map)"
   timeComplexity: string;
   spaceComplexity: string;
+}
+
+export interface MathProof {
+  solutions: SolutionComplexity[];
   explanation: string;
   correctnessProof?: string;
 }
@@ -51,12 +56,17 @@ export interface CodeStep {
   explanation: string;
 }
 
+export interface CodeSolution {
+  name: string;
+  code: string;
+  steps: CodeStep[];
+}
+
 export interface Solution {
   language: Language;
   thoughtProcess: string;
   mathProof: MathProof;
-  code: string;
-  steps: CodeStep[];
+  codeSolutions: CodeSolution[];
 }
 
 export interface ChatMessage {
@@ -78,7 +88,7 @@ export interface ChatContext {
   // section content for follow-up context
   thoughtProcessContent?: string;
   mathProofContent?: MathProof;
-  codeContent?: { code: string; steps: CodeStep[] };
+  codeContent?: { solutions: CodeSolution[] };
 }
 
 export interface SectionLoadState {

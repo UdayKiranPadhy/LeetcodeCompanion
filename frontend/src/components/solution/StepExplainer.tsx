@@ -1,5 +1,6 @@
 import React from 'react';
 import type { CodeStep } from '@/types';
+import { renderInline } from '@/utils/renderMarkdown';
 
 interface StepExplainerProps {
   steps: CodeStep[];
@@ -133,9 +134,8 @@ export function StepExplainer({ steps, activeStep, onStepChange }: StepExplainer
                     lineHeight: 'var(--leading-relaxed)',
                     fontWeight: isActive ? 'var(--weight-medium)' : 'var(--weight-regular)',
                   }}
-                >
-                  {step.explanation}
-                </p>
+                  dangerouslySetInnerHTML={{ __html: renderInline(step.explanation) }}
+                />
               </div>
             </button>
           );

@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { HeroBackground } from './HeroBackground';
 import { SearchInput } from './SearchInput';
-import { SpotlightCard } from '@/components/ui/SpotlightCard';
 
 interface HeroSectionProps {
   onSubmit: (input: string) => void;
@@ -169,37 +168,6 @@ export function HeroSection({ onSubmit, isLoading }: HeroSectionProps) {
           }}
         >
           <SearchInput onSubmit={onSubmit} isLoading={isLoading} onFocusChange={setSearchFocused} />
-
-          {/* Quick Access Cards showing Spotlight Effect */}
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr)',
-            gap: 'var(--space-4)',
-            width: '100%',
-            maxWidth: '620px',
-            opacity: searchFocused ? 0 : 1,
-            transform: searchFocused ? 'translateY(20px)' : 'translateY(0)',
-            transition: 'all 400ms cubic-bezier(0.4, 0, 0.2, 1)',
-            pointerEvents: searchFocused ? 'none' : 'auto',
-          }}>
-            <SpotlightCard
-              style={{ padding: 'var(--space-4)', cursor: 'pointer' }}
-              onClick={() => onSubmit('two-sum')}
-              spotlightColor="rgba(26, 115, 232, 0.12)"
-            >
-              <div style={{ fontWeight: '600', marginBottom: '4px' }}>Two Sum</div>
-              <div style={{ fontSize: 'var(--text-sm)', color: 'var(--color-difficulty-easy)' }}>Easy • Array</div>
-            </SpotlightCard>
-
-            <SpotlightCard
-              style={{ padding: 'var(--space-4)', cursor: 'pointer' }}
-              onClick={() => onSubmit('lru-cache')}
-              spotlightColor="rgba(26, 115, 232, 0.12)"
-            >
-              <div style={{ fontWeight: '600', marginBottom: '4px' }}>LRU Cache</div>
-              <div style={{ fontSize: 'var(--text-sm)', color: 'var(--color-difficulty-medium)' }}>Medium • Design</div>
-            </SpotlightCard>
-          </div>
         </div>
       </div>
     </section>

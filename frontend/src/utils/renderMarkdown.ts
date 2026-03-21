@@ -2,7 +2,7 @@ import katex from 'katex';
 
 const LINK_STYLE = 'color:var(--color-accent);text-decoration:underline;text-underline-offset:2px';
 
-function renderInline(text: string): string {
+export function renderInline(text: string): string {
   let result = text.replace(/\$([^$\n]+)\$/g, (_, math) => {
     try {
       return katex.renderToString(math.trim(), { displayMode: false, throwOnError: false });

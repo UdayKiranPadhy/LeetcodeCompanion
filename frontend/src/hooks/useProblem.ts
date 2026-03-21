@@ -7,7 +7,7 @@ import type {
   LoadingState,
   SectionLoadState,
   MathProof,
-  CodeStep,
+  CodeSolution,
 } from '@/types';
 import {
   analyzeThoughtProcess,
@@ -86,14 +86,14 @@ export function useProblem(): UseProblemReturn {
       });
       setSectionLoadState({ thoughtProcess: 'success', mathProof: 'loading', code: 'idle' });
 
-      // Step 2: Math proof
-      const mp: MathProof = await generateMathProof(problem, lang);
+      // Step 2: Math proof (pass thought process for multi-solution complexity analysis)
+      const mp: MathProof = await generateMathProof(problem, lang, tpAccumulated);
       setSolution(prev => ({ ...prev, mathProof: mp }));
       setSectionLoadState({ thoughtProcess: 'success', mathProof: 'success', code: 'loading' });
 
-      // Step 3: Code + steps
-      const codeResult: { code: string; steps: CodeStep[] } = await generateCode(problem, lang);
-      setSolution(prev => ({ ...prev, code: codeResult.code, steps: codeResult.steps }));
+      // Step 3: Code (all solutions, informed by thought process)
+      const codeResult: { solutions: CodeSolution[] } = await generateCode(problem, lang, tpAccumulated);
+      setSolution(prev => ({ ...prev, codeSolutions: codeResult.solutions }));
       setSectionLoadState({ thoughtProcess: 'success', mathProof: 'success', code: 'success' });
     } catch {
       setSectionLoadState(prev => ({

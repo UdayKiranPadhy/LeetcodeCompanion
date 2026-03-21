@@ -30,6 +30,7 @@ export function SolutionView({ problem, problemHook }: SolutionViewProps) {
     isGenerating,
   } = problemHook;
 
+  const [activeSolutionIdx, setActiveSolutionIdx] = useState(0);
   const [activeStep, setActiveStep] = useState(-1);
   const [codeChatOpen, setCodeChatOpen] = useState(false);
   const [codeCollapsed, setCodeCollapsed] = useState(false);
@@ -46,13 +47,15 @@ export function SolutionView({ problem, problemHook }: SolutionViewProps) {
     }
   }, [codeCollapsed]);
 
+  const activeSolution = solution.codeSolutions?.[activeSolutionIdx];
+
   const codeChatContext: ChatContext = {
     problemId: problem.id,
     section: 'code',
     language: activeLanguage,
     problem,
-    codeContent: solution.code && solution.steps?.length
-      ? { code: solution.code, steps: solution.steps }
+    codeContent: solution.codeSolutions?.length
+      ? { solutions: solution.codeSolutions }
       : undefined,
   };
 
@@ -68,11 +71,12 @@ export function SolutionView({ problem, problemHook }: SolutionViewProps) {
 
   function handleLanguageChange(lang: string) {
     setActiveLanguage(lang as Language);
+    setActiveSolutionIdx(0);
     setActiveStep(-1);
     setCodeChatOpen(false);
   }
 
-  const isCodeReady = sectionLoadState.code === 'success' && solution.code;
+  const isCodeReady = sectionLoadState.code === 'success' && solution.codeSolutions?.length;
   const showCodeSection = sectionLoadState.mathProof === 'success';
 
   return (
@@ -215,18 +219,47 @@ export function SolutionView({ problem, problemHook }: SolutionViewProps) {
               </div>
             ) : isCodeReady ? (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-6)' }}>
+                {/* Solution tabs (only when multiple solutions) */}
+                {solution.codeSolutions!.length > 1 && (
+                  <div style={{ display: 'flex', gap: 'var(--space-2)', flexWrap: 'wrap' }}>
+                    {solution.codeSolutions!.map((sol, idx) => {
+                      const isActive = idx === activeSolutionIdx;
+                      return (
+                        <button
+                          key={idx}
+                          onClick={() => { setActiveSolutionIdx(idx); setActiveStep(-1); }}
+                          style={{
+                            padding: '5px 14px',
+                            borderRadius: 'var(--radius-md)',
+                            border: `1px solid ${isActive ? 'var(--color-accent)' : 'var(--color-border)'}`,
+                            background: isActive ? 'var(--color-accent-light)' : 'transparent',
+                            color: isActive ? 'var(--color-accent)' : 'var(--color-text-secondary)',
+                            fontSize: 'var(--text-sm)',
+                            fontFamily: 'var(--font-body)',
+                            fontWeight: isActive ? 'var(--weight-semibold)' : 'var(--weight-regular)',
+                            cursor: 'pointer',
+                            transition: 'all var(--duration-fast)',
+                          }}
+                        >
+                          {sol.name}
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+
                 {/* Code block */}
                 <CodeBlock
-                  code={solution.code!}
+                  code={activeSolution!.code}
                   language={activeLanguage}
-                  steps={solution.steps}
+                  steps={activeSolution!.steps}
                   activeStep={activeStep}
                 />
 
                 {/* Step explainer */}
-                {solution.steps && solution.steps.length > 0 && (
+                {activeSolution!.steps.length > 0 && (
                   <StepExplainer
-                    steps={solution.steps}
+                    steps={activeSolution!.steps}
                     activeStep={activeStep}
                     onStepChange={setActiveStep}
                   />

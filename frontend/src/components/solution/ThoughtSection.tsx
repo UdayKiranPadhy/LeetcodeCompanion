@@ -16,8 +16,13 @@ export function ThoughtSection({ content, loadState, problem, language }: Though
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [contentHeight, setContentHeight] = useState<number | 'auto'>('auto');
   const contentRef = useRef<HTMLDivElement>(null);
+  const hasMounted = useRef(false);
 
   useEffect(() => {
+    if (!hasMounted.current) {
+      hasMounted.current = true;
+      return;
+    }
     if (!contentRef.current) return;
     if (isCollapsed) {
       setContentHeight(contentRef.current.scrollHeight);

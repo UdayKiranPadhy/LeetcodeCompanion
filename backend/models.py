@@ -1,5 +1,11 @@
+import re
 from typing import List, Optional
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
+
+_LEETCODE_PROBLEM_RE = re.compile(
+    r"^(https?://)?(www\.)?leetcode\.com/problems/[\w-]+/?",
+    re.IGNORECASE,
+)
 
 
 # ── Domain models ─────────────────────────────────────────────────────────────
@@ -40,9 +46,14 @@ class ThoughtFeedback(BaseModel):
     hints: List[Hint]
 
 
-class MathProof(BaseModel):
+class SolutionComplexity(BaseModel):
+    name: str           # e.g. "Brute Force", "Optimal (Two Pointers)"
     timeComplexity: str
     spaceComplexity: str
+
+
+class MathProof(BaseModel):
+    solutions: List[SolutionComplexity]
     explanation: str
     correctnessProof: Optional[str] = None
 
@@ -50,6 +61,12 @@ class MathProof(BaseModel):
 class CodeStep(BaseModel):
     lineRange: List[int]  # [startLine, endLine], 1-indexed
     explanation: str
+
+
+class CodeSolution(BaseModel):
+    name: str           # e.g. "Brute Force", "Optimal (Hash Map)"
+    code: str
+    steps: List[CodeStep]
 
 
 class ChatMessage(BaseModel):
@@ -61,6 +78,16 @@ class ChatMessage(BaseModel):
 
 class FetchProblemRequest(BaseModel):
     url: str
+
+    @field_validator("url")
+    @classmethod
+    def must_be_leetcode_problem_url(cls, v: str) -> str:
+        if not _LEETCODE_PROBLEM_RE.match(v.strip()):
+            raise ValueError(
+                "Only LeetCode problem URLs are accepted "
+                "(e.g. https://leetcode.com/problems/two-sum/)"
+            )
+        return v.strip()
 
 
 class AnalyzeThoughtRequest(BaseModel):
@@ -76,16 +103,17 @@ class GenerateThoughtProcessRequest(BaseModel):
 class GenerateMathProofRequest(BaseModel):
     problem: Problem
     language: str
+    thoughtProcessContent: Optional[str] = None
 
 
 class GenerateCodeRequest(BaseModel):
     problem: Problem
     language: str
+    thoughtProcessContent: Optional[str] = None
 
 
 class CodeContent(BaseModel):
-    code: str
-    steps: List[CodeStep]
+    solutions: List[CodeSolution]
 
 
 class ChatContext(BaseModel):

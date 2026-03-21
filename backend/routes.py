@@ -16,7 +16,10 @@ from models import (
     ProblemExample,
     ThoughtFeedback,
     MathProof,
+    SolutionComplexity,
     CodeStep,
+    CodeSolution,
+    CodeContent,
     FetchProblemRequest,
     AnalyzeThoughtRequest,
     GenerateThoughtProcessRequest,
@@ -376,24 +379,46 @@ Be concise and educational. Do NOT include any code."""
 @router.post("/generate-math-proof")
 async def generate_math_proof(req: GenerateMathProofRequest):
     """Stream time/space complexity analysis and a correctness proof."""
+    thought_block = ""
+    if req.thoughtProcessContent:
+        thought_block = (
+            f"\nTHOUGHT PROCESS (from previous section — use this to identify all distinct approaches):\n"
+            f"{req.thoughtProcessContent}\n"
+        )
+
     prompt = f"""You are an expert at algorithm analysis. Provide a rigorous complexity analysis
-and correctness proof for the optimal solution to this problem in {req.language}.
+and correctness proof for ALL distinct solutions/approaches to this problem in {req.language}.
 
 PROBLEM: {req.problem.title} ({req.problem.difficulty})
 DESCRIPTION:
 {req.problem.description}
 
+{thought_block}
+
+Analyze every distinct approach covered (e.g. brute force, then the optimal solution).
+For each approach give its own time and space complexity entry.
+
 Return ONLY a raw JSON object:
 {{
-  "timeComplexity": "<e.g. O(n)>",
-  "spaceComplexity": "<e.g. O(n)>",
-  "explanation": "<detailed markdown — break down time and space step by step>",
-  "correctnessProof": "<semi-formal proof: state the claim, then prove it with case analysis or induction>"
+  "solutions": [
+    {{
+      "name": "<approach name, e.g. 'Brute Force' or 'Optimal (Hash Map)'>",
+      "timeComplexity": "<e.g. O(n²)>",
+      "spaceComplexity": "<e.g. O(1)>"
+    }}
+  ],
+  "explanation": "<detailed markdown — for each solution break down time and space step by step, then compare them>",
+  "correctnessProof": "<semi-formal proof for the optimal approach: state the claim, then prove it with case analysis or induction>"
 }}"""
 
     def validate(text: str) -> dict:
         data = strip_and_parse(text)
-        return MathProof(**data).model_dump()
+        solutions = [SolutionComplexity(**s).model_dump() for s in data["solutions"]]
+        return MathProof(
+            solutions=solutions,
+            explanation=data["explanation"],
+            correctnessProof=data.get("correctnessProof"),
+        ).model_dump()
 
     return StreamingResponse(
         _json_sse_stream(ask_agent_stream(prompt), validate),
@@ -403,36 +428,52 @@ Return ONLY a raw JSON object:
 
 @router.post("/generate-code")
 async def generate_code(req: GenerateCodeRequest):
-    """Stream an optimized solution with line-by-line step explanations."""
-    prompt = f"""You are an expert competitive programmer. Write an optimal solution
-for this LeetCode problem in {req.language}, then annotate it step by step.
+    """Stream all solutions with line-by-line step explanations."""
+    thought_block = ""
+    if req.thoughtProcessContent:
+        thought_block = (
+            f"\nTHOUGHT PROCESS (from previous section — generate code for each distinct approach described):\n"
+            f"{req.thoughtProcessContent}\n"
+        )
 
+    prompt = f"""You are an expert competitive programmer. Write complete solutions for ALL distinct approaches described in the thought process for this LeetCode problem in {req.language}.
+{thought_block}
 PROBLEM: {req.problem.title} ({req.problem.difficulty})
 DESCRIPTION:
 {req.problem.description}
 
+For each distinct approach (e.g. brute force first, then the optimal solution), provide a named solution with its own annotated steps.
+
 Return ONLY a raw JSON object:
 {{
-  "code": "<complete solution as a single string; use \\n for newlines>",
-  "steps": [
+  "solutions": [
     {{
-      "lineRange": [1, 1],
-      "explanation": "<what these lines do and WHY — educational, not just descriptive>"
+      "name": "<approach name, e.g. 'Brute Force' or 'Optimal (Hash Map)'>",
+      "code": "<complete solution as a single string; use \\n for newlines>",
+      "steps": [
+        {{
+          "lineRange": [1, 1],
+          "explanation": "<what these lines do and WHY — educational, not just descriptive>"
+        }}
+      ]
     }}
   ]
 }}
 
-Rules for steps:
-- lineRange is [startLine, endLine] (1-indexed, inclusive)
+Rules for steps (applied independently per solution):
+- lineRange is [startLine, endLine] (1-indexed, inclusive) within that solution's code
 - Cover every line; steps must be in order with no gaps
 - Group closely related lines (e.g. a loop header + its first body line) into one step
-- Aim for 5–8 steps total
+- Aim for 5–8 steps per solution
 - Explain the reasoning, not just what the code says"""
 
     def validate(text: str) -> dict:
         data = strip_and_parse(text)
-        steps = [CodeStep(**s).model_dump() for s in data["steps"]]
-        return {"code": data["code"], "steps": steps}
+        solutions = []
+        for sol in data["solutions"]:
+            steps = [CodeStep(**s).model_dump() for s in sol["steps"]]
+            solutions.append(CodeSolution(name=sol["name"], code=sol["code"], steps=steps).model_dump())
+        return CodeContent(solutions=solutions).model_dump()
 
     return StreamingResponse(
         _json_sse_stream(ask_agent_stream(prompt), validate),
@@ -500,9 +541,12 @@ async def send_followup(req: SendFollowUpRequest):
         )
     elif ctx.section == "mathProof" and ctx.mathProofContent:
         proof = ctx.mathProofContent
+        solutions_text = "\n".join(
+            f"- {s.name}: Time {s.timeComplexity}, Space {s.spaceComplexity}"
+            for s in proof.solutions
+        )
         proof_text = (
-            f"Time Complexity: {proof.timeComplexity}\n"
-            f"Space Complexity: {proof.spaceComplexity}\n\n"
+            f"Solutions & Complexities:\n{solutions_text}\n\n"
             f"Explanation:\n{proof.explanation}"
         )
         if proof.correctnessProof:
@@ -514,16 +558,22 @@ async def send_followup(req: SendFollowUpRequest):
             f"Answer the student's follow-up question using the analysis above as context."
         )
     elif ctx.section == "code" and ctx.codeContent:
-        steps_text = "\n".join(
-            f"Lines {s.lineRange[0]}-{s.lineRange[1]}: {s.explanation}"
-            for s in ctx.codeContent.steps
-        )
+        solutions_text = ""
+        for sol in ctx.codeContent.solutions:
+            steps_text = "\n".join(
+                f"Lines {s.lineRange[0]}-{s.lineRange[1]}: {s.explanation}"
+                for s in sol.steps
+            )
+            solutions_text += (
+                f"\n### {sol.name}\n"
+                f"```\n{sol.code}\n```\n"
+                f"Steps:\n{steps_text}\n"
+            )
         section_block = (
             f"SECTION: {section_label}{lang_note}\n\n"
-            f"CODE SOLUTION (what was shown to the student):\n"
-            f"```\n{ctx.codeContent.code}\n```\n\n"
-            f"STEP-BY-STEP BREAKDOWN:\n{steps_text}\n\n"
-            f"Answer the student's follow-up question using the code and breakdown above as context."
+            f"CODE SOLUTIONS (what was shown to the student):\n"
+            f"{solutions_text}\n"
+            f"Answer the student's follow-up question using the code and breakdowns above as context."
         )
     else:
         section_block = f"SECTION: {section_label}{lang_note}\n"

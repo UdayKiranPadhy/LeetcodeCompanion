@@ -3,7 +3,7 @@ import type {
   Language,
   ThoughtFeedback,
   MathProof,
-  CodeStep,
+  CodeSolution,
   ChatContext,
 } from '@/types';
 
@@ -115,15 +115,20 @@ export async function generateThoughtProcess(
   return streamText('/generate-thought-process', { problem, language }, onChunk);
 }
 
-export async function generateMathProof(problem: Problem, language: Language): Promise<MathProof> {
-  return streamToResult<MathProof>('/generate-math-proof', { problem, language });
+export async function generateMathProof(
+  problem: Problem,
+  language: Language,
+  thoughtProcessContent?: string,
+): Promise<MathProof> {
+  return streamToResult<MathProof>('/generate-math-proof', { problem, language, thoughtProcessContent });
 }
 
 export async function generateCode(
   problem: Problem,
   language: Language,
-): Promise<{ code: string; steps: CodeStep[] }> {
-  return streamToResult<{ code: string; steps: CodeStep[] }>('/generate-code', { problem, language });
+  thoughtProcessContent?: string,
+): Promise<{ solutions: CodeSolution[] }> {
+  return streamToResult<{ solutions: CodeSolution[] }>('/generate-code', { problem, language, thoughtProcessContent });
 }
 
 export async function sendFollowUp(
