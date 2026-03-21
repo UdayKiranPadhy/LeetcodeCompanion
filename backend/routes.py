@@ -347,13 +347,20 @@ PROBLEM: {req.problem.title} ({req.problem.difficulty})
 TAGS: {', '.join(req.problem.tags)}
 DESCRIPTION:
 {req.problem.description}
+EXAMPLES:
+{"".join(f'- Input: {ex.input}\n  Output: {ex.output}\n  Explanation: {ex.explanation}\n  Image: {ex.image}\n\n' for ex in req.problem.examples)}
+CONSTRAINTS:
+{"".join(f'- {c}\n' for c in req.problem.constraints)}
 
 Write structured markdown with these sections:
 ## Intuition
-(Why the naive approach fails and what insight unlocks the optimal solution)
+(Explain the core insight or intuition that leads to the optimal solution. The intuition should be such that if the student understands it deeply, they could reconstruct the solution on their own. Avoid vague statements like "think about using a hash map" without explaining why.)
+(After explaining the intuition, the student should be able to solve similar problems that share the same underlying insight, even if the surface details differ.)
 
 ## Approach
+(Explain the brute-force solution first, then the optimal solution. For the optimal solution, break down the algorithm step by step, explaining the reasoning behind each step and how it connects to the intuition. Use clear examples or analogies if helpful.)
 (Step-by-step algorithm walkthrough — numbered list)
+(If multiple approaches are possible, briefly compare them and explain why the optimal one is better.)
 
 ## Why it works
 (Brief justification of correctness)

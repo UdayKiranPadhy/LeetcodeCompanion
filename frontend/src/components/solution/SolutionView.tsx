@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import type { Problem, Language } from '@/types';
 import { useProblem } from '@/hooks/useProblem';
 import { Tabs } from '@/components/ui/Tabs';
@@ -32,6 +32,19 @@ export function SolutionView({ problem, problemHook }: SolutionViewProps) {
 
   const [activeStep, setActiveStep] = useState(-1);
   const [codeChatOpen, setCodeChatOpen] = useState(false);
+  const [codeCollapsed, setCodeCollapsed] = useState(false);
+  const [codeContentHeight, setCodeContentHeight] = useState<number | 'auto'>('auto');
+  const codeContentRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!codeContentRef.current) return;
+    if (codeCollapsed) {
+      setCodeContentHeight(codeContentRef.current.scrollHeight);
+      requestAnimationFrame(() => setCodeContentHeight(0));
+    } else {
+      setCodeContentHeight(codeContentRef.current.scrollHeight);
+    }
+  }, [codeCollapsed]);
 
   const codeChatContext: ChatContext = {
     problemId: problem.id,
@@ -116,15 +129,22 @@ export function SolutionView({ problem, problemHook }: SolutionViewProps) {
           }}
         >
           {/* Section header */}
-          <div
+          <button
+            onClick={() => setCodeCollapsed(c => !c)}
             style={{
-              padding: 'var(--space-5) var(--space-6)',
-              borderBottom: '1px solid var(--color-border)',
-              background: 'var(--color-bg-secondary)',
+              width: '100%',
               display: 'flex',
               alignItems: 'center',
               gap: 'var(--space-3)',
+              padding: 'var(--space-5) var(--space-6)',
+              background: 'var(--color-bg-secondary)',
+              border: 'none',
+              borderBottom: codeCollapsed ? 'none' : '1px solid var(--color-border)',
+              cursor: 'pointer',
+              textAlign: 'left',
             }}
+            onMouseEnter={e => { e.currentTarget.style.background = 'var(--color-bg-hover)'; }}
+            onMouseLeave={e => { e.currentTarget.style.background = 'var(--color-bg-secondary)'; }}
           >
             <div
               style={{
@@ -142,7 +162,7 @@ export function SolutionView({ problem, problemHook }: SolutionViewProps) {
                 <path d="M2 4l4-3 4 3M2 10l4 3 4-3M2 4v6M10 4v6" stroke="var(--color-accent)" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
             </div>
-            <div>
+            <div style={{ flex: 1 }}>
               <h3
                 style={{
                   fontFamily: 'var(--font-body)',
@@ -158,8 +178,33 @@ export function SolutionView({ problem, problemHook }: SolutionViewProps) {
                 Click a step to highlight lines
               </p>
             </div>
-          </div>
+            {/* Chevron */}
+            <svg
+              width="20"
+              height="20"
+              viewBox="0 0 20 20"
+              fill="none"
+              style={{
+                flexShrink: 0,
+                color: 'var(--color-text-tertiary)',
+                transition: 'transform var(--duration-medium) var(--ease-standard)',
+                transform: codeCollapsed ? 'rotate(0deg)' : 'rotate(180deg)',
+              }}
+            >
+              <path d="M5 7.5l5 5 5-5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </button>
 
+          {/* Collapsible content */}
+          <div
+            ref={codeContentRef}
+            onTransitionEnd={() => { if (!codeCollapsed) setCodeContentHeight('auto'); }}
+            style={{
+              height: codeContentHeight === 'auto' ? 'auto' : `${codeContentHeight}px`,
+              overflow: 'hidden',
+              transition: 'height var(--duration-medium) var(--ease-standard)',
+            }}
+          >
           <div style={{ padding: 'var(--space-6)' }}>
             {sectionLoadState.code === 'loading' ? (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
@@ -221,6 +266,7 @@ export function SolutionView({ problem, problemHook }: SolutionViewProps) {
                 </div>
               </div>
             ) : null}
+          </div>
           </div>
         </div>
       )}
