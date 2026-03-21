@@ -3,17 +3,11 @@ import type { Problem } from '@/types';
 import { DifficultyBadge } from './DifficultyBadge';
 import { Badge } from '@/components/ui/Badge';
 import { SpotlightCard } from '@/components/ui/SpotlightCard';
+import { renderMarkdown } from '@/utils/renderMarkdown';
 
 interface ProblemCardProps {
   problem: Problem;
   defaultCollapsed?: boolean;
-}
-
-function renderMarkdown(text: string): string {
-  return text
-    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-    .replace(/`([^`]+)`/g, '<code style="font-family:var(--font-code);background:var(--color-bg-secondary);padding:1px 5px;border-radius:var(--radius-sm);font-size:0.9em">$1</code>')
-    .replace(/\n/g, '<br/>');
 }
 
 export function ProblemCard({ problem, defaultCollapsed = false }: ProblemCardProps) {
@@ -190,9 +184,10 @@ export function ProblemCard({ problem, defaultCollapsed = false }: ProblemCardPr
                       <span style={{ color: 'var(--color-text-primary)' }}>{ex.output}</span>
                     </p>
                     {ex.explanation && (
-                      <p style={{ fontSize: 'var(--text-sm)', color: 'var(--color-text-secondary)', marginTop: 'var(--space-1)' }}>
-                        <em>{ex.explanation}</em>
-                      </p>
+                      <p
+                        style={{ fontSize: 'var(--text-sm)', color: 'var(--color-text-secondary)', marginTop: 'var(--space-1)' }}
+                        dangerouslySetInnerHTML={{ __html: `<em>${renderMarkdown(ex.explanation)}</em>` }}
+                      />
                     )}
                   </div>
                 ))}
@@ -236,7 +231,7 @@ export function ProblemCard({ problem, defaultCollapsed = false }: ProblemCardPr
                     }}
                   >
                     <span style={{ color: 'var(--color-accent)', flexShrink: 0, marginTop: '2px' }}>•</span>
-                    {c}
+                    <span dangerouslySetInnerHTML={{ __html: renderMarkdown(c) }} />
                   </li>
                 ))}
               </ul>

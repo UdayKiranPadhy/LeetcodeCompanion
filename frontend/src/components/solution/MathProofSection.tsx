@@ -2,20 +2,13 @@ import React, { useState } from 'react';
 import type { LoadingState, MathProof, ChatContext, Language, Problem } from '@/types';
 import { ChatPanel } from '@/components/chat/ChatPanel';
 import { SpotlightCard } from '@/components/ui/SpotlightCard';
+import { renderMarkdown } from '@/utils/renderMarkdown';
 
 interface MathProofSectionProps {
   mathProof: MathProof | undefined;
   loadState: LoadingState;
   problem: Problem;
   language: Language;
-}
-
-function renderMarkdown(text: string): string {
-  return text
-    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-    .replace(/`([^`]+)`/g, '<code style="font-family:var(--font-code);background:var(--color-bg-secondary);padding:1px 5px;border-radius:3px;font-size:0.9em">$1</code>')
-    .replace(/\n\n/g, '</p><p style="margin-top:8px">')
-    .replace(/\n/g, '<br/>');
 }
 
 export function MathProofSection({ mathProof, loadState, problem, language }: MathProofSectionProps) {
@@ -157,7 +150,7 @@ export function MathProofSection({ mathProof, loadState, problem, language }: Ma
                 lineHeight: 'var(--leading-relaxed)',
                 marginBottom: mathProof.correctnessProof ? 'var(--space-5)' : 0,
               }}
-              dangerouslySetInnerHTML={{ __html: `<p>${renderMarkdown(mathProof.explanation)}</p>` }}
+              dangerouslySetInnerHTML={{ __html: renderMarkdown(mathProof.explanation) }}
             />
 
             {/* Correctness proof */}
@@ -190,7 +183,7 @@ export function MathProofSection({ mathProof, loadState, problem, language }: Ma
                     color: 'var(--color-text-primary)',
                     lineHeight: 'var(--leading-relaxed)',
                   }}
-                  dangerouslySetInnerHTML={{ __html: `<p>${renderMarkdown(mathProof.correctnessProof)}</p>` }}
+                  dangerouslySetInnerHTML={{ __html: renderMarkdown(mathProof.correctnessProof) }}
                 />
               </div>
             )}

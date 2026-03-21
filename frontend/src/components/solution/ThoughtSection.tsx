@@ -2,21 +2,13 @@ import React, { useState } from 'react';
 import type { LoadingState, ChatContext, Language, Problem } from '@/types';
 import { ChatPanel } from '@/components/chat/ChatPanel';
 import { SpotlightCard } from '@/components/ui/SpotlightCard';
+import { renderMarkdown } from '@/utils/renderMarkdown';
 
 interface ThoughtSectionProps {
   content: string;
   loadState: LoadingState;
   problem: Problem;
   language: Language;
-}
-
-function renderMarkdown(text: string): string {
-  return text
-    .replace(/^## (.+)$/gm, '<h3 style="font-size:var(--text-base);font-weight:var(--weight-semibold);color:var(--color-text-primary);margin:16px 0 6px">$1</h3>')
-    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-    .replace(/`([^`]+)`/g, '<code style="font-family:var(--font-code);background:var(--color-bg-secondary);padding:1px 5px;border-radius:3px;font-size:0.9em">$1</code>')
-    .replace(/\n\n/g, '</p><p style="margin-top:8px">')
-    .replace(/\n/g, '<br/>');
 }
 
 export function ThoughtSection({ content, loadState, problem, language }: ThoughtSectionProps) {
@@ -103,7 +95,7 @@ export function ThoughtSection({ content, loadState, problem, language }: Though
                 color: 'var(--color-text-primary)',
                 lineHeight: 'var(--leading-relaxed)',
               }}
-              dangerouslySetInnerHTML={{ __html: `<p>${renderMarkdown(content)}</p>` }}
+              dangerouslySetInnerHTML={{ __html: renderMarkdown(content) }}
             />
 
             {/* Follow-up */}
