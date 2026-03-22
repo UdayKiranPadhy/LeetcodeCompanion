@@ -20,9 +20,7 @@ if not GOOGLE_API_KEY:
 
 os.environ["GOOGLE_API_KEY"] = GOOGLE_API_KEY
 
-# MODEL = "gemini-3-flash-preview"
-# MODEL = "gemini-2.5-flash"
-MODEL = "gemini-3.1-flash-lite-preview"
+MODEL = os.getenv("GEMINI_MODEL", "gemini-3.1-flash-lite-preview")
 
 SYSTEM_PROMPT = (
     "You are an expert competitive programmer and LeetCode tutor. Reply to the user like a helpful, patient, and knowledgeable tutor who is trying to help the student understand how to solve the problem. "
@@ -46,6 +44,16 @@ _runner = InMemoryRunner(agent=_agent)
 _client = google_genai.Client(api_key=GOOGLE_API_KEY)
 
 
+# ── Rate limit handling ───────────────────────────────────────────────────────
+
+_RATE_LIMIT_MESSAGE = "Server Rate Limit due to huge load traffic, might not be because of you. Try again later"
+
+
+def _is_rate_limit_error(e: Exception) -> bool:
+    msg = str(e).lower()
+    return "429" in str(e) or "resource exhausted" in msg or "rate limit" in msg or "quota exceeded" in msg
+
+
 # ── Core helpers ──────────────────────────────────────────────────────────────
 
 async def ask_agent(prompt: str) -> str:
@@ -64,29 +72,38 @@ async def ask_agent(prompt: str) -> str:
         parts=[genai_types.Part(text=prompt)],
     )
 
-    response_text = ""
-    async for event in _runner.run_async(
-        user_id=user_id,
-        session_id=session_id,
-        new_message=message,
-    ):
-        if event.is_final_response():
-            if event.content and event.content.parts:
-                response_text = event.content.parts[0].text
-            break
-
-    return response_text
+    try:
+        response_text = ""
+        async for event in _runner.run_async(
+            user_id=user_id,
+            session_id=session_id,
+            new_message=message,
+        ):
+            if event.is_final_response():
+                if event.content and event.content.parts:
+                    response_text = event.content.parts[0].text
+                break
+        return response_text
+    except Exception as e:
+        if _is_rate_limit_error(e):
+            raise Exception(_RATE_LIMIT_MESSAGE) from e
+        raise
 
 
 async def ask_agent_stream(prompt: str):
     """Stream text chunks from Gemini for a single-turn prompt."""
-    async for chunk in await _client.aio.models.generate_content_stream(
-        model=MODEL,
-        contents=[genai_types.Content(role="user", parts=[genai_types.Part(text=prompt)])],
-        config=genai_types.GenerateContentConfig(system_instruction=SYSTEM_PROMPT),
-    ):
-        if chunk.text:
-            yield chunk.text
+    try:
+        async for chunk in await _client.aio.models.generate_content_stream(
+            model=MODEL,
+            contents=[genai_types.Content(role="user", parts=[genai_types.Part(text=prompt)])],
+            config=genai_types.GenerateContentConfig(system_instruction=SYSTEM_PROMPT),
+        ):
+            if chunk.text:
+                yield chunk.text
+    except Exception as e:
+        if _is_rate_limit_error(e):
+            raise Exception(_RATE_LIMIT_MESSAGE) from e
+        raise
 
 
 def chat_with_history(history: list, user_message: str) -> str:
@@ -105,12 +122,17 @@ def chat_with_history(history: list, user_message: str) -> str:
         )
     )
 
-    response = _client.models.generate_content(
-        model=MODEL,
-        contents=contents,
-        config=genai_types.GenerateContentConfig(system_instruction=SYSTEM_PROMPT),
-    )
-    return response.text
+    try:
+        response = _client.models.generate_content(
+            model=MODEL,
+            contents=contents,
+            config=genai_types.GenerateContentConfig(system_instruction=SYSTEM_PROMPT),
+        )
+        return response.text
+    except Exception as e:
+        if _is_rate_limit_error(e):
+            raise Exception(_RATE_LIMIT_MESSAGE) from e
+        raise
 
 
 async def chat_with_history_stream(history: list[None|dict], user_message: str, problem_description: str = "", append_before_history: str = ""):
@@ -129,13 +151,18 @@ async def chat_with_history_stream(history: list[None|dict], user_message: str, 
         )
     )
 
-    async for chunk in await _client.aio.models.generate_content_stream(
-        model=MODEL,
-        contents=contents,
-        config=genai_types.GenerateContentConfig(system_instruction=SYSTEM_PROMPT + "\n\n" + problem_description + "\n" + append_before_history, temperature=0.85),
-    ):
-        if chunk.text:
-            yield chunk.text
+    try:
+        async for chunk in await _client.aio.models.generate_content_stream(
+            model=MODEL,
+            contents=contents,
+            config=genai_types.GenerateContentConfig(system_instruction=SYSTEM_PROMPT + "\n\n" + problem_description + "\n" + append_before_history, temperature=0.85),
+        ):
+            if chunk.text:
+                yield chunk.text
+    except Exception as e:
+        if _is_rate_limit_error(e):
+            raise Exception(_RATE_LIMIT_MESSAGE) from e
+        raise
 
 
 def strip_and_parse(text: str) -> dict:
