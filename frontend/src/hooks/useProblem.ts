@@ -24,11 +24,13 @@ interface UseProblemReturn {
   feedback: ThoughtFeedback | null;
   userThought: string;
   analyzeState: LoadingState;
+  analyzeError: string | null;
   submitThought: (thought: string) => Promise<void>;
 
   // Solution flow
   solution: Partial<Solution>;
   sectionLoadState: SectionLoadState;
+  solutionError: string | null;
   isGenerating: boolean;
   activeLanguage: Language;
   setActiveLanguage: (lang: Language) => void;
@@ -48,10 +50,12 @@ export function useProblem(): UseProblemReturn {
   const [feedback, setFeedback] = useState<ThoughtFeedback | null>(null);
   const [userThought, setUserThought] = useState<string>('');
   const [analyzeState, setAnalyzeState] = useState<LoadingState>('idle');
+  const [analyzeError, setAnalyzeError] = useState<string | null>(null);
 
   // Solution
   const [solution, setSolution] = useState<Partial<Solution>>({});
   const [sectionLoadState, setSectionLoadState] = useState<SectionLoadState>(INITIAL_SECTION_STATE);
+  const [solutionError, setSolutionError] = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const isGeneratingRef = useRef(false);
   const [activeLanguage, setActiveLanguage] = useState<Language>('python');
@@ -59,13 +63,15 @@ export function useProblem(): UseProblemReturn {
   const submitThought = useCallback(async (thought: string) => {
     if (!problem) return;
     setAnalyzeState('loading');
+    setAnalyzeError(null);
     try {
       const result = await analyzeThoughtProcess(problem, thought);
       setFeedback(result);
       setUserThought(thought);
       setAnalyzeState('success');
-    } catch {
+    } catch (e) {
       setAnalyzeState('error');
+      setAnalyzeError((e as Error)?.message ?? 'Could not analyze your approach. Please try again.');
     }
   }, [problem]);
 
@@ -77,6 +83,7 @@ export function useProblem(): UseProblemReturn {
     setSolution({});
     setSectionLoadState({ thoughtProcess: 'loading', mathProof: 'idle', code: 'idle' });
 
+    setSolutionError(null);
     try {
       // Step 1: Thought process (streamed progressively)
       let tpAccumulated = '';
@@ -95,13 +102,14 @@ export function useProblem(): UseProblemReturn {
       const codeResult: { solutions: CodeSolution[] } = await generateCode(problem, lang, tpAccumulated);
       setSolution(prev => ({ ...prev, codeSolutions: codeResult.solutions }));
       setSectionLoadState({ thoughtProcess: 'success', mathProof: 'success', code: 'success' });
-    } catch {
+    } catch (e) {
       setSectionLoadState(prev => ({
         ...prev,
         ...(prev.thoughtProcess === 'loading' && { thoughtProcess: 'error' }),
         ...(prev.mathProof === 'loading' && { mathProof: 'error' }),
         ...(prev.code === 'loading' && { code: 'error' }),
       }));
+      setSolutionError((e as Error)?.message ?? 'Could not generate solution. Please try again.');
     } finally {
       isGeneratingRef.current = false;
       setIsGenerating(false);
@@ -120,9 +128,11 @@ export function useProblem(): UseProblemReturn {
     feedback,
     userThought,
     analyzeState,
+    analyzeError,
     submitThought,
     solution,
     sectionLoadState,
+    solutionError,
     isGenerating,
     activeLanguage,
     setActiveLanguage: handleSetActiveLanguage,

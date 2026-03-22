@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { HeroSection } from '@/components/home/HeroSection';
 import { fetchProblemDetails } from '@/services/api';
 
+const RATE_LIMIT_RE = /rate.?limit|429|quota|resource exhausted/i;
+
 export function HomePage() {
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
@@ -14,14 +16,22 @@ export function HomePage() {
   }, []);
   const [error, setError] = useState<string | null>(null);
 
+  // Auto-dismiss after 5 s
+  useEffect(() => {
+    if (!error) return;
+    const id = setTimeout(() => setError(null), 5000);
+    return () => clearTimeout(id);
+  }, [error]);
+
   async function handleSubmit(input: string) {
     setIsLoading(true);
     setError(null);
     try {
       const problem = await fetchProblemDetails(input);
       navigate(`/problem/${problem.slug}`, { state: { problem } });
-    } catch {
-      setError('Could not load the problem. Please try again.');
+    } catch (e) {
+      const msg = (e as Error)?.message ?? '';
+      setError(RATE_LIMIT_RE.test(msg) ? msg : 'Could not load the problem. Please try again.');
       setIsLoading(false);
     }
   }

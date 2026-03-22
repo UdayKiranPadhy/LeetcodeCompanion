@@ -43,8 +43,22 @@ export function ProblemPage() {
   );
   const [loadingProblem, setLoadingProblem] = useState(!problem);
   const [activeTab, setActiveTab] = useState<'analyze' | 'solution'>('analyze');
+  const [pageError, setPageError] = useState<string | null>(null);
 
   const problemHook = useProblem();
+
+  // Surface analyze / solution errors in the popup
+  useEffect(() => {
+    const err = problemHook.analyzeError ?? problemHook.solutionError;
+    if (err) setPageError(err);
+  }, [problemHook.analyzeError, problemHook.solutionError]);
+
+  // Auto-dismiss after 5 s
+  useEffect(() => {
+    if (!pageError) return;
+    const id = setTimeout(() => setPageError(null), 5000);
+    return () => clearTimeout(id);
+  }, [pageError]);
 
   // If we navigated directly (no state), refetch
   useEffect(() => {
@@ -181,6 +195,31 @@ export function ProblemPage() {
           )}
         </div>
       </div>
+
+      {/* Error popup */}
+      {pageError && (
+        <p
+          style={{
+            position: 'fixed',
+            bottom: 'var(--space-8)',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            background: 'var(--color-error-bg)',
+            border: '1px solid var(--color-error-border)',
+            color: 'var(--color-error)',
+            padding: 'var(--space-3) var(--space-5)',
+            borderRadius: 'var(--radius-lg)',
+            fontSize: 'var(--text-sm)',
+            boxShadow: 'var(--shadow-md)',
+            animation: 'slide-up 300ms var(--ease-decelerate)',
+            maxWidth: '480px',
+            textAlign: 'center',
+            zIndex: 999,
+          }}
+        >
+          {pageError}
+        </p>
+      )}
     </div>
   );
 }

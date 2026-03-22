@@ -9,14 +9,6 @@ services:
       - ./backend/.env          # Copy from backend/.env.example — never commit
     environment:
       PYTHONUNBUFFERED: "1"
-    restart: unless-stopped
-    healthcheck:
-      # crawl4ai launches headless Chromium at startup — allow up to 60s before marking unhealthy
-      test: ["CMD", "curl", "-f", "http://localhost:8000/docs"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 60s
 
   frontend:
     build:
@@ -30,7 +22,4 @@ services:
         VITE_API_URL: "http://localhost:8000"
     ports:
       - "8080:8080"
-    depends_on:
-      backend:
-        condition: service_healthy
     restart: unless-stopped
