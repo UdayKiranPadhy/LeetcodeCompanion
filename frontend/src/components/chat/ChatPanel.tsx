@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import type { ChatContext } from '@/types';
 import { useChat } from '@/hooks/useChat';
 import { ChatMessage } from './ChatMessage';
@@ -12,10 +12,15 @@ interface ChatPanelProps {
 
 export function ChatPanel({ context, isOpen, onClose }: ChatPanelProps) {
   const { messages, isStreaming, sendMessage } = useChat(context);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    const container = messagesContainerRef.current;
+    if (!container) return;
+    const isNearBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 80;
+    if (isNearBottom) {
+      container.scrollTop = container.scrollHeight;
+    }
   }, [messages, isStreaming]);
 
   return (
@@ -93,6 +98,7 @@ export function ChatPanel({ context, isOpen, onClose }: ChatPanelProps) {
 
         {/* Messages area */}
         <div
+          ref={messagesContainerRef}
           style={{
             height: '200px',
             overflowY: 'auto',
@@ -146,7 +152,6 @@ export function ChatPanel({ context, isOpen, onClose }: ChatPanelProps) {
               </div>
             </div>
           )}
-          <div ref={messagesEndRef} />
         </div>
 
         {/* Input */}

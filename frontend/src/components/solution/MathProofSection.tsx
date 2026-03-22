@@ -32,6 +32,14 @@ export function MathProofSection({ mathProof, loadState, problem, language }: Ma
     }
   }, [isCollapsed]);
 
+  // When new content finishes loading, ensure the div isn't stuck at a stale pixel height
+  useEffect(() => {
+    if (loadState === 'success') {
+      setIsCollapsed(false);
+      setContentHeight('auto');
+    }
+  }, [loadState]);
+
   function handleTransitionEnd() {
     if (!isCollapsed) setContentHeight('auto');
   }

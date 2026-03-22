@@ -25,6 +25,7 @@ body {
   background-color: var(--color-bg-primary);
   line-height: var(--leading-normal);
   min-height: 100vh;
+  overflow-anchor: none;
 }
 
 /* ── Scrollbar ───────────────────────────────────────────────────────────── */

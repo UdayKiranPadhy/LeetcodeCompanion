@@ -1,7 +1,8 @@
-import React, { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import type { LoadingState, ChatContext, Language, Problem } from '@/types';
 import { ChatPanel } from '@/components/chat/ChatPanel';
 import { SpotlightCard } from '@/components/ui/SpotlightCard';
+import { Spinner } from '@/components/ui/Spinner';
 import { renderMarkdown } from '@/utils/renderMarkdown';
 
 interface ThoughtSectionProps {
@@ -31,6 +32,14 @@ export function ThoughtSection({ content, loadState, problem, language }: Though
       setContentHeight(contentRef.current.scrollHeight);
     }
   }, [isCollapsed]);
+
+  // When new content finishes loading, ensure the div isn't stuck at a stale pixel height
+  useEffect(() => {
+    if (loadState === 'success') {
+      setIsCollapsed(false);
+      setContentHeight('auto');
+    }
+  }, [loadState]);
 
   function handleTransitionEnd() {
     if (!isCollapsed) setContentHeight('auto');
@@ -135,10 +144,20 @@ export function ThoughtSection({ content, loadState, problem, language }: Though
       >
         <div style={{ padding: 'var(--space-6)' }}>
           {loadState === 'loading' ? (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
-              {[100, 88, 72, 92, 60].map((w, i) => (
-                <div key={i} className="skeleton-line" style={{ width: `${w}%` }} />
-              ))}
+            <div
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 'var(--space-3)',
+                padding: 'var(--space-8) 0',
+              }}
+            >
+              <Spinner size="md" />
+              <p style={{ fontSize: 'var(--text-sm)', color: 'var(--color-text-tertiary)' }}>
+                Generating thought process…
+              </p>
             </div>
           ) : (
             <>
