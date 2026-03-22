@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { HeroSection } from '@/components/home/HeroSection';
 import { fetchProblemDetails } from '@/services/api';
@@ -6,6 +6,12 @@ import { fetchProblemDetails } from '@/services/api';
 export function HomePage() {
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    for (const key of Object.keys(localStorage)) {
+      if (key.startsWith('lc_chat_')) localStorage.removeItem(key);
+    }
+  }, []);
   const [error, setError] = useState<string | null>(null);
 
   async function handleSubmit(input: string) {

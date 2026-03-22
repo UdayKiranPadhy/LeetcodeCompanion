@@ -11,7 +11,7 @@ function nextId() {
 // - thought-analysis is split by feedbackType (correct vs incorrect)
 // - other sections are split by section + language
 function storageKey(ctx: ChatContext) {
-  const parts = ['lc_chat', ctx.problemId, ctx.section];
+  const parts = ['lc_chat', ctx.problem.slug, ctx.section];
   if (ctx.feedbackType) parts.push(ctx.feedbackType);
   if (ctx.language) parts.push(ctx.language);
   return parts.join('_');
