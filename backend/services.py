@@ -170,6 +170,10 @@ def strip_and_parse(text: str) -> dict:
     text = text.strip()
     text = re.sub(r"^```(?:json)?\s*", "", text, flags=re.MULTILINE)
     text = re.sub(r"\s*```$", "", text, flags=re.MULTILINE)
-    return json.loads(text.strip())
+    text = text.strip()
+    # Fix invalid JSON escape sequences (e.g. \{ \} \s from LaTeX/regex in LLM output)
+    # by escaping backslashes not followed by valid JSON escape characters.
+    text = re.sub(r'\\(?!["\\/bfnrtu])', r'\\\\', text)
+    return json.loads(text)
 
 
