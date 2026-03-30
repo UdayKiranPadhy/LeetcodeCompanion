@@ -165,15 +165,41 @@ async def chat_with_history_stream(history: list[None|dict], user_message: str, 
         raise
 
 
+def _fix_invalid_json_escapes(text: str) -> str:
+    """Double any backslash that isn't part of a valid JSON escape sequence.
+
+    Processes character-by-character so that valid ``\\`` pairs are consumed
+    together and their trailing character is never mistakenly altered.
+    """
+    out: list[str] = []
+    i, n = 0, len(text)
+    while i < n:
+        if text[i] == '\\' and i + 1 < n:
+            next_ch = text[i + 1]
+            if next_ch in '"\\/bfnrtu':
+                # Valid JSON escape — keep the pair as-is
+                out.append(text[i])
+                out.append(next_ch)
+                i += 2
+            else:
+                # Invalid escape (e.g. \e from LaTeX \equiv) — double the backslash
+                out.append('\\\\')
+                i += 1
+        else:
+            out.append(text[i])
+            i += 1
+    return ''.join(out)
+
+
 def strip_and_parse(text: str) -> dict:
     """Remove markdown code fences (if any) and parse JSON."""
     text = text.strip()
     text = re.sub(r"^```(?:json)?\s*", "", text, flags=re.MULTILINE)
     text = re.sub(r"\s*```$", "", text, flags=re.MULTILINE)
     text = text.strip()
-    # Fix invalid JSON escape sequences (e.g. \{ \} \s from LaTeX/regex in LLM output)
-    # by escaping backslashes not followed by valid JSON escape characters.
-    text = re.sub(r'\\(?!["\\/bfnrtu])', r'\\\\', text)
-    return json.loads(text)
+    try:
+        return json.loads(text)
+    except json.JSONDecodeError:
+        return json.loads(_fix_invalid_json_escapes(text))
 
 

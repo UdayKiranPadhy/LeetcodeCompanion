@@ -248,3 +248,7 @@ JSON endpoints additionally emit `data: {"type": "result", "data": {...}}` befor
 - **Chromium needs memory.** The backend container requires at least **2 GB RAM** in production. Cloud Run's default is 512 MB — set `--memory 2Gi`.
 - **LeetCode must be reachable** from the backend container. Firewalled environments will cause problem fetching to fail.
 - **CORS defaults to `*`.** Set `CORS_ORIGINS` to your frontend's origin in production.
+
+
+
+gcloud builds submit --tag asia-south1-docker.pkg.dev/sizzing/leetcoderepo/leetcodeimg:leetcode
